@@ -1,0 +1,5 @@
+outs:
+- md5: d91c9c7e69422d154edfbd43d46a0a61
+  size: 358719659
+  hash: md5
+  path: yellow_tripdata_2010-02.parquet

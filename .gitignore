@@ -10,13 +10,14 @@ venv/
 .ipynb_checkpoints/
 
 # --- Dados ---
-data/
-!data/.gitkeep          # mantém a pasta vazia
+# ignora ficheiros grandes, mas não os metadados DVC
+data/**
+!data/**/*.dvc
+!data/.gitkeep
+
+# ignora cache interna do DVC
 .dvc/cache/
 .dvc/tmp/
-*.dvc
-!.dvc
-!.dvcignore
 
 # --- Modelos & artefactos ---
 models/
