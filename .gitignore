@@ -12,6 +12,7 @@ venv/
 # --- Dados ---
 # ignora ficheiros grandes, mas não os metadados DVC
 data/**
+!data/**/
 !data/**/*.dvc
 !data/.gitkeep
 
