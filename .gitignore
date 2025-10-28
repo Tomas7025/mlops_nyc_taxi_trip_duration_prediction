@@ -1,0 +1,42 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+*.sqlite
+.env
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- Dados ---
+data/
+!data/.gitkeep          # mantém a pasta vazia
+.dvc/cache/
+.dvc/tmp/
+*.dvc
+
+# --- Modelos & artefactos ---
+models/
+mlruns/
+*.pkl
+*.joblib
+*.h5
+*.onnx
+
+# --- DVC remotes & configs ---
+*.lock
+.dvc/config.local
+
+# --- IDEs & sistema ---
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.bak
+*.tmp
+
+# --- Docker & logs ---
+*.pid
+*.log
+docker-compose.override.yml
