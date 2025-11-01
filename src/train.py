@@ -107,14 +107,12 @@ def main():
 
 		model.fit(X_train,y_train)
 
-		# signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		# mlflow.sklearn.log_model(model, name="model", signature=signature, input_example=X_train[:5])
+		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
+		mlflow.sklearn.log_model(model, signature=signature, input_example=X_train[:5])
 
 		y_pred = model.predict(X_test)
 
 		calculate_metrics(y_test, y_pred)
-
-		print('Random Forest')
 
 
 
