@@ -22,7 +22,7 @@ CAT_COLS = ['vendor_id','rate_code','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','fare_amount','surcharge','mta_tax','tip_amount','tolls_amount','total_amount']
 
 def preprocess_data(data):
-	data = data.head(1000000) # ! <- ta a ser limitado em 1000000
+	data = data.head(1000000) # ! <- limitado a 1000000
 
 	data['pickup_datetime'] = pd.to_datetime(data['pickup_datetime'])
 	data['dropoff_datetime'] = pd.to_datetime(data['dropoff_datetime'])
@@ -108,12 +108,15 @@ def main():
 		model.fit(X_train,y_train)
 
 		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, signature=signature, input_example=X_train[:5])
+		mlflow.sklearn.log_model(model, name="model", signature=signature, input_example=X_train[:5])
 
 		y_pred = model.predict(X_test)
 
 		calculate_metrics(y_test, y_pred)
 
+		model_uri = f"runs:/{run.info.run_id}/model"
+		print(f"\nmodel_uri: {model_uri}")
+		registered_model = mlflow.register_model(model_uri, "model")
 
 
 if __name__ == '__main__':
