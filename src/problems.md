@@ -1,0 +1,3 @@
+- payment_type é numerico em 2011 e não numérico em 2010
+- PickUp e DropOff location tão em coords em 2010, mas tão em número da região em 2011
+- congestion_surcharge, airport_fee, improvement_surcharge só existem em 2011 (assumo que o extra de 2011 seja equivalente ao surcharge de 2010)
