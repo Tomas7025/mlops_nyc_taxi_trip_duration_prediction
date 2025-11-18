@@ -6,91 +6,33 @@ on:
 jobs:
   vpn-test:
     runs-on: ubuntu-latest
-    env:
-      VPN_CLIENT_OVPN: ${{ secrets.VPN_CLIENT_OVPN }}
-      VPN_CA_CRT: ${{ secrets.VPN_CA_CRT }}
-      VPN_USERNAME: ${{ secrets.VPN_USERNAME }}
-      VPN_PASSWORD: ${{ secrets.VPN_PASSWORD }}
-      VM_IP: 10.17.0.162
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openvpn iputils-ping netcat-openbsd
-
-      - name: Pre-flight checks (TUN and env)
-        run: |
-          set -euxo pipefail
-          uname -a
-          ip link
-          ls -l /dev/net || true
-          # TUN deve existir e ser um char device; "File descriptor in bad state" ao cat é OK
-          if [ -c /dev/net/tun ]; then
-            echo "TUN device OK: /dev/net/tun"
-          else
-            echo "TUN device missing - OpenVPN cannot start on this runner" >&2
-            exit 1
-          fi
-          test -n "$VPN_CLIENT_OVPN"
-          test -n "$VPN_USERNAME"
-          test -n "$VPN_PASSWORD"
+      - name: Install OpenVPN
+        run: sudo apt-get update && sudo apt-get install -y openvpn iputils-ping
 
       - name: Write VPN config files
         run: |
-          set -euo pipefail
-          # Escreve os ficheiros a partir de secrets (preserva quebras de linha)
-          printf "%s" "$VPN_CLIENT_OVPN" > client.ovpn
-          # Se tiveres o CA num secret separado, escreve-o (opcional)
-          if [ -n "${VPN_CA_CRT:-}" ]; then
-            printf "%s" "$VPN_CA_CRT" > GEANT-CA.crt
-            # Adiciona 'ca GEANT-CA.crt' se nem tiver bloco <ca> nem diretiva ca existente
-            if ! grep -qE '^\s*ca\s+' client.ovpn && ! grep -q '<ca>' client.ovpn; then
-              echo 'ca GEANT-CA.crt' >> client.ovpn
-            fi
-          fi
-          # Aponta para cred.txt
-          if grep -qE '^\s*auth-user-pass(\b|$)' client.ovpn; then
-            sed -E -i 's|^\s*auth-user-pass(\s+.*)?$|auth-user-pass cred.txt|' client.ovpn
-          else
-            echo 'auth-user-pass cred.txt' >> client.ovpn
-          fi
-          # Credenciais
-          printf "%s\n%s\n" "$VPN_USERNAME" "$VPN_PASSWORD" > cred.txt
-          chmod 600 cred.txt client.ovpn || true
-          [ -f GEANT-CA.crt ] && chmod 644 GEANT-CA.crt || true
+          echo "$VPN_CLIENT_OVPN" > client.ovpn
+          echo "$VPN_CA_CRT" > GEANT-CA.crt
 
-      - name: Start OpenVPN (with logs)
+          # Replace "auth-user-pass" with "auth-user-pass cred.txt"
+          sed -i 's/auth-user-pass/auth-user-pass cred.txt/' client.ovpn
+
+      - name: Create credentials file
         run: |
-          set -euo pipefail
-          sudo openvpn --version
-          # Inicia com logs verbosos para debug
-          sudo openvpn --config client.ovpn --daemon --writepid openvpn.pid --log openvpn.log --verb 4 || {
-            echo "OpenVPN failed to start. Logs:"
-            sudo tail -n +1 openvpn.log || true
-            exit 1
-          }
-          # Aguarda túnel subir
-          for i in {1..20}; do
-            ip addr || true
-            if ip addr | grep -E 'tun[0-9]:' >/dev/null 2>&1; then
-              echo "TUN interface is up"
-              break
-            fi
-            sleep 2
-          done
-          if ! ip addr | grep -E 'tun[0-9]:' >/dev/null 2>&1; then
-            echo "TUN interface did not come up. OpenVPN log follows:" >&2
-            sudo tail -n +200 openvpn.log || true
-            exit 1
-          fi
-          echo "OpenVPN started OK"
-          sudo tail -n +1 openvpn.log | tail -n 50 || true
+          echo "$VPN_USERNAME" > cred.txt
+          echo "$VPN_PASSWORD" >> cred.txt
+
+      - name: Start OpenVPN
+        run: |
+          sudo openvpn --config client.ovpn --daemon
+          sleep 10
+          ip addr
 
       - name: Test connectivity to VM
         run: |
-          set -euo pipefail
-          echo "Pinging VM $VM_IP ..."
-          ping -c 4 "$VM_IP" || (echo "Failed to reach VM" >&2; exit 1)
+          echo "Pinging VM..."
+          ping -c 4 10.17.0.162 || (echo "Failed to reach VM"; exit 1)
