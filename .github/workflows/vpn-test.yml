@@ -18,9 +18,6 @@ jobs:
           echo "$VPN_CLIENT_OVPN" > client.ovpn
           echo "$VPN_CA_CRT" > GEANT-CA.crt
           
-          # OpenVPN requires files in same folder
-          mv GEANT-CA.crt ./GEANT-CA.crt
-
           # Insert path to credentials file
           # Replace "auth-user-pass" with "auth-user-pass cred.txt"
           sed -i 's/auth-user-pass/auth-user-pass cred.txt/' client.ovpn
