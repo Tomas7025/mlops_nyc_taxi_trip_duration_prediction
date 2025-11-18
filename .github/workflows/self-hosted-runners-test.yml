@@ -1,0 +1,43 @@
+name: Self-Hosted Runner Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: self-hosted
+
+    steps:
+      - name: Display runner info
+        run: |
+          echo "Runner hostname: $(hostname)"
+          echo "Runner user: $(whoami)"
+          echo "System uptime:"
+          uptime
+
+      - name: Check network & ping training VM
+        run: |
+          echo "Pinging training VM..."
+          ping -c 3 10.17.0.162
+
+      - name: Check Docker
+        run: |
+          echo "Docker version:"
+          docker --version
+          echo "Running containers:"
+          docker ps
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check DVC accessibility
+        run: |
+          echo "Testing DVC environment..."
+          dvc --version || echo "DVC not installed on runner"
+          echo "Repo contents:"
+          ls -R .
+
+      - name: Test Python environment
+        run: |
+          python3 --version
+          pip3 --version
