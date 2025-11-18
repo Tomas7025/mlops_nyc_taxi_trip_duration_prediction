@@ -28,7 +28,7 @@ jobs:
 
       - name: Start OpenVPN
         run: |
-          sudo openvpn --config client.ovpn --daemon
+          sudo openvpn --config client.ovpn
           sleep 10
           ip addr
 
