@@ -36,7 +36,7 @@ def calculate_metrics(y_test, y_pred):
 def save_model(model):
 	model_name = model.__class__.__name__
 	try:
-		with open(model_name + ".pkl", "wb") as f:
+		with open("models/" + model_name + ".pkl", "wb") as f:
 			pickle.dump(model, f)
 			print("Model " + str(model_name) + " saved")
 	except Exception as e:

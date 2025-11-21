@@ -16,22 +16,27 @@ def predict():
     try:
         data = request.get_json()
 
-        user_input = data["inputs"]
         model_name = data["model"]
+        user_input = data["inputs"]
 
         model = load_model(model_name)
 
-        X = np.array(user_input).reshape(1, -1)
+        X = np.array(user_input)
+
+        #if the user sends only one sample
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
 
         prediction = model.predict(X).tolist()
 
         return jsonify({
-            "model": model.__class__.__name__,
+            "model": model_name,
             "prediction": prediction
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 
 def main():
