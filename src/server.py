@@ -4,13 +4,12 @@ import numpy as np
 
 app = Flask(__name__)
 
-def load_model(path):
+def load_model(model_name):
+    path = "models/" + model_name + ".pkl"
     with open(path, "rb") as f:
         model = pickle.load(f)
     return model
 
-MODEL_PATH = "models/random_forest.pkl"
-model = load_model(MODEL_PATH)
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -18,6 +17,9 @@ def predict():
         data = request.get_json()
 
         user_input = data["inputs"]
+        model_name = data["model"]
+
+        model = load_model(model_name)
 
         X = np.array(user_input).reshape(1, -1)
 
@@ -41,4 +43,7 @@ if __name__ == "__main__":
 
 #curl -X POST http://127.0.0.1:5000/predict \
 #     -H "Content-Type: application/json" \
-#     -d '{"inputs": [5.1, 3.5, 1.4, 0.2]}'
+#     -d '{
+#           "model": "random_forest",
+#           "inputs": [5.1, 3.5, 1.4, 0.2]
+#         }'
