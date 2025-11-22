@@ -5,10 +5,11 @@ def drop_columns(data,columns):
 	existing = [c for c in columns if c in data.columns]
 	return data.drop(existing,axis=1)
 
+'''
+Já não é preciso, mas podemos falar no relatório, já que tiinhamos feito
+
 def normalize_column_names(data):
-	'''
-	Falta tratar das coords de pickup/dropoff
-	'''
+
 	rename_map = {
 		'tpep_pickup_datetime': 'pickup_datetime',
 		'tpep_dropoff_datetime': 'dropoff_datetime',
@@ -20,26 +21,24 @@ def normalize_column_names(data):
 	data.rename(columns=rename_map, inplace=True)
 	return data
 
+'''
 
 def preprocess(data):
-	data = normalize_column_names(data)
-	print('---Column names normalized')
+	data['tpep_pickup_datetime'] = pd.to_datetime(data['tpep_pickup_datetime'])
+	data['tpep_dropoff_datetime'] = pd.to_datetime(data['tpep_dropoff_datetime'])
 
-	data['pickup_datetime'] = pd.to_datetime(data['pickup_datetime'])
-	data['dropoff_datetime'] = pd.to_datetime(data['dropoff_datetime'])
+	data['RatecodeID'] = pd.to_numeric(data['RatecodeID'], downcast='integer')
 
-	data['rate_code'] = pd.to_numeric(data['rate_code'], downcast='integer')
+	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
 
-	data['duration'] = (data['dropoff_datetime'] - data['pickup_datetime']).dt.total_seconds() / 60
-
-	data = drop_columns(data,['store_and_fwd_flag','dropoff_datetime','airport_fee','congestion_surcharge','improvement_surcharge'])
+	data = drop_columns(data,['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])
 	print('---Columns Dropped')
 
-	data['pickup_hour'] = data['pickup_datetime'].dt.hour
-	data['pickup_day_of_week'] = data['pickup_datetime'].dt.dayofweek
-	data['pickup_month'] = data['pickup_datetime'].dt.month
-	data['pickup_day'] = data['pickup_datetime'].dt.day
-	data.drop(['pickup_datetime'],axis=1,inplace=True)
+	data['pickup_hour'] = data['tpep_pickup_datetime'].dt.hour
+	data['pickup_day_of_week'] = data['tpep_pickup_datetime'].dt.dayofweek
+	data['pickup_month'] = data['tpep_pickup_datetime'].dt.month
+	data['pickup_day'] = data['tpep_pickup_datetime'].dt.day
+	data.drop(['tpep_pickup_datetime'],axis=1,inplace=True)
 	print('---PickUp Date Split')
 	return data
 

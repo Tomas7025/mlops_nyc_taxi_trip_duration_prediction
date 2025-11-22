@@ -19,17 +19,17 @@ mlflow.set_tracking_uri("http://10.17.0.162:5000")
 
 mlflow.set_experiment("nyc_taxi_project")
 
-CAT_COLS = ['vendor_id','rate_code','payment_type']
-NUM_COLS = ['passenger_count','trip_distance','pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','fare_amount','surcharge','mta_tax','tip_amount','tolls_amount','total_amount']
+CAT_COLS = ['VendorID','RatecodeID','payment_type']
+NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
 
 def preprocess_data(data):
-	data = data.head(1000000) # ! <- limitado a 1000000
+	#data = data.head(1000000) # ! <- limitado a 1000000
 
-	data['pickup_datetime'] = pd.to_datetime(data['pickup_datetime'])
-	data['dropoff_datetime'] = pd.to_datetime(data['dropoff_datetime'])
+	data['tpep_pickup_datetime'] = pd.to_datetime(data['tpep_pickup_datetime'])
+	data['tpep_dropoff_datetime'] = pd.to_datetime(data['tpep_dropoff_datetime'])
 
-	data['rate_code'] = pd.to_numeric(data['rate_code'], downcast='integer')
-	data['duration'] = (data['dropoff_datetime'] - data['pickup_datetime']).dt.total_seconds() / 60
+	data['RatecodeID'] = pd.to_numeric(data['RatecodeID'], downcast='integer')
+	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
 
 	return data
 
@@ -69,12 +69,11 @@ def calculate_metrics(y_test, y_pred):
 def main():
 	with mlflow.start_run() as run:
 		# === Read dataset ===
-		data = pd.read_parquet('data\\raw\\yellow_tripdata_2010-01.parquet')
+		data = pd.read_parquet('data\\raw\\yellow_tripdata_2011-01.parquet')
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','dropoff_datetime'])),
-									('lower_case',lowerCaseTransformer()),
+		baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
 									('data_transformer',pickupDataTransformer()),
 									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
@@ -85,9 +84,9 @@ def main():
 		X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 		# 
-		X_train, y_train = missingDataTransformer().transform(X_train,y_train)
-		print(X_train.index.equals(y_train.index))
-		X_test, y_test = missingDataTransformer().transform(X_test,y_test)
+		# X_train, y_train = missingDataTransformer().transform(X_train,y_train)
+		# print(X_train.index.equals(y_train.index))
+		# X_test, y_test = missingDataTransformer().transform(X_test,y_test)
 
 		baseline_pipeline.fit(X_train)
 		X_train = baseline_pipeline.transform(X_train)

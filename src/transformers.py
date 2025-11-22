@@ -3,14 +3,14 @@ from sklearn.preprocessing import OneHotEncoder,StandardScaler
 
 class pickupDataTransformer():
 	def __init__(self):
-		self.columns='pickup_datetime'
+		self.columns='tpep_pickup_datetime'
 
 	def transform(self,X:pd.DataFrame,y=None):
-		X['pickup_hour'] = X['pickup_datetime'].dt.hour
-		X['pickup_day_of_week'] = X['pickup_datetime'].dt.dayofweek
-		X['pickup_month'] = X['pickup_datetime'].dt.month
-		X['pickup_day'] = X['pickup_datetime'].dt.day
-		X.drop(['pickup_datetime'],axis=1,inplace=True)
+		X['pickup_hour'] = X['tpep_pickup_datetime'].dt.hour
+		X['pickup_day_of_week'] = X['tpep_pickup_datetime'].dt.dayofweek
+		X['pickup_month'] = X['tpep_pickup_datetime'].dt.month
+		X['pickup_day'] = X['tpep_pickup_datetime'].dt.day
+		X.drop(['tpep_pickup_datetime'],axis=1,inplace=True)
 		return X
 
 	def fit(self, X, y=None):
