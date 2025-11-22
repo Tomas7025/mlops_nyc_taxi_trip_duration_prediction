@@ -12,8 +12,9 @@ from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEn
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
 # Configure MLflow tracking URI and authentication
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5050"))
+mlflow.set_tracking_uri("http://10.17.0.162:5000")
 app = Flask(__name__)
+
 CAT_COLS = ['vendor_id','rate_code','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','fare_amount','surcharge','mta_tax','tip_amount','tolls_amount','total_amount']
 
