@@ -1,0 +1,23 @@
+name: 1 - Continuous Integration
+run-name: "${{ github.workflow }}"
+
+permissions: write-all
+
+on:
+  push:
+    branches: [ joao-1-2-actions ]
+  pull_request:
+    branches: [ joao-1-2-actions ]
+
+  workflow_dispatch:
+
+jobs:
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - run: pip install uv
+      - run: uv sync
+      - run: uv run pytest src/serving/test_app.py -v
