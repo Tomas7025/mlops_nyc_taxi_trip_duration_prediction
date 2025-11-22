@@ -21,6 +21,9 @@ WORKDIR /app
 # ---- Copy dependency files ----
 COPY training/ .
 
+# ---- Copy the transformers.py file ----
+COPY transformers.py .
+
 # ---- Install dependencies (same as CI) ----
 RUN uv sync --frozen
 
