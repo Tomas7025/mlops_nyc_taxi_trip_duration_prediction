@@ -31,9 +31,11 @@ VOLUME ["/app/data"]
 RUN dvc pull -v -j 4
 
 # ---- Install dependencies (same as CI) ----
-RUN uv sync --frozen
-
+# RUN uv sync --frozen
+RUN pip install --upgrade pip && \
+   pip install -r requirements.txt
 
 # ---- By default, run the CI training ----
-ENTRYPOINT ["uv", "run", "python", "train_model.py"]
+# ENTRYPOINT ["uv", "run", "python", "train_model.py"]
+ENTRYPOINT ["python", "train_model.py"]
 # ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
