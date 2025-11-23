@@ -20,7 +20,6 @@ COPY src/serving .
 
 # ---- Copy the transformers.py file and __init__.py ----
 COPY src/transformers.py .
-COPY src/__init__.py .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \

@@ -12,10 +12,10 @@ from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEn
 
 import pickle
 # Se estiveres dentro da VM:
-mlflow.set_tracking_uri("http://10.17.0.162:5000")
+# mlflow.set_tracking_uri("http://10.17.0.162:5000")
 
 # Ou se estiveres a usar túnel SSH (fora da VM, mas na VPN):
-# mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
 mlflow.set_experiment("nyc_taxi_project")
 
