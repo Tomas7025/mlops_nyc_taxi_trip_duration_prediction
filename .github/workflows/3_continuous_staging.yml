@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+        with: { python-version: '3.13' }
       - run: pip install uv
 
       # Log in to GitHub Container Registry (GHCR)
@@ -63,7 +63,7 @@ jobs:
       # the system in a preproduction environment, that would manually or automatically
       # apply  A/B testing, shadow testing and other approaches to measure
       # and validate the performance of the model before moving to production
-      - run: uv run pytest tests/test_e2e.py -v
+      - run: uv run pytest src/tests/test_e2e.py -v
 
       # When reaching the stage both the serving and the model will have passed
       # the necessary tests and we promote to production
@@ -72,7 +72,7 @@ jobs:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
           FROM_ALIAS: staging
           TO_ALIAS: production
-        run: uv run python model-promotion/promote_model.py
+        run: uv run python src/model-promotion/promote_model.py
 
       # Tag the serving image with production tag
       # This is the image that will be used to deploy the system
