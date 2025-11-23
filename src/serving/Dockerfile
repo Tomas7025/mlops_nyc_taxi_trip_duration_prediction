@@ -19,8 +19,10 @@ WORKDIR /app
 COPY src/serving .
 
 # Install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+#RUN pip install --upgrade pip && \
+#    pip install -r requirements.txt
+
+RUN pip install -r requirements.txt
 
 
 # Expose Flask port
