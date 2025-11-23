@@ -19,7 +19,7 @@ import os
 mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 mlflow.set_tracking_uri(mlflow_uri)
 
-mlflow.set_experiment("nyc_taxi_project")
+# mlflow.set_experiment("nyc_taxi_project")
 
 CAT_COLS = ['VendorID','RatecodeID','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
