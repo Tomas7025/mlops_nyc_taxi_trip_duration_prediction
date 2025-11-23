@@ -46,6 +46,7 @@ jobs:
       # Download training image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
       
+      - run: pip install dvc dvc-ssh
       - run: dvc pull -v -j 4
 
       # Run training container which runs the training script within
