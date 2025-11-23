@@ -8,8 +8,9 @@ from sklearn.metrics import root_mean_squared_error, mean_squared_error,r2_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 
-from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+from src.transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
+import pickle
 # Se estiveres dentro da VM:
 mlflow.set_tracking_uri("http://10.17.0.162:5000")
 
@@ -31,6 +32,16 @@ def preprocess_data(data):
 	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
 
 	return data
+
+def save_model(model):
+	#to support multiple models
+	model_name = model.__class__.__name__
+	try:
+		with open("models/" + model_name + ".pkl", "wb") as f:
+			pickle.dump(model, f)
+			print("Model " + str(model_name) + " saved")
+	except Exception as e:
+		print("Exception: " + str(e))
 
 def calculate_metrics(y_test, y_pred):
 	mse = mean_squared_error(y_test, y_pred)
@@ -117,6 +128,7 @@ def main():
 		print(f"\nmodel_uri: {model_uri}")
 		registered_model = mlflow.register_model(model_uri, "model")
 
+		save_model(model)
 
 if __name__ == '__main__':
 	main()

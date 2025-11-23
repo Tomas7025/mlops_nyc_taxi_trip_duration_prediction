@@ -7,7 +7,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegresso
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error,r2_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-
+import pickle
 
 #from data_report import missing_values_report
 from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
@@ -32,6 +32,15 @@ def calculate_metrics(y_test, y_pred):
 		"rmse": rmse,
 		"r2score": r2score
 	}
+
+def save_model(model):
+	model_name = model.__class__.__name__
+	try:
+		with open("models/" + model_name + ".pkl", "wb") as f:
+			pickle.dump(model, f)
+			print("Model " + str(model_name) + " saved")
+	except Exception as e:
+		print("Exception: " + str(e))
 
 def main():
 
@@ -98,11 +107,11 @@ def main():
 
 	print('Linear Regressor')
 
-	model = LinearRegression()
+	lr = LinearRegression()
 
-	model.fit(X_train,y_train)
+	lr.fit(X_train,y_train)
 
-	y_pred = model.predict(X_test)
+	y_pred = lr.predict(X_test)
 
 	calculate_metrics(y_test, y_pred)
 
@@ -116,13 +125,17 @@ def main():
 	calculate_metrics(y_test, y_pred)
 
 	print('HistGradientBoostingRegressor')
-	model = HistGradientBoostingRegressor()
-	model.fit(X_train, y_train)
+	hgbr = HistGradientBoostingRegressor()
+	hgbr.fit(X_train, y_train)
 
-	y_pred = model.predict(X_test)
+	y_pred = hgbr.predict(X_test)
 
 	calculate_metrics(y_test, y_pred)
 	
+	save_model(lr)
+	save_model(rf)
+	save_model(hgbr)
+
 	return
 
 

@@ -1,0 +1,41 @@
+name: "2 - Continuous Delivery"
+run-name: "${{ github.workflow }}"
+
+permissions: write-all
+
+on:
+  # Runs when the previous stage finished
+  workflow_run:
+    workflows: ["1 - Continuous Integration"]
+    types: [completed]
+
+  workflow_dispatch:
+
+env:
+  REGISTRY: "ghcr.io"
+  
+
+jobs:
+
+  train-model:
+    # Run only if previous stage finished successfully
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - run: pip install uv
+      
+
+      # Log in to GitHub Container Registry (GHCR)
+      # We will get the serving image with tag staging from here to validate
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Download training image built in the previous stage
+      - run: docker pull ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
