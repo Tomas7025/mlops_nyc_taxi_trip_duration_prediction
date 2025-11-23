@@ -15,12 +15,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
+# Copy application code
+COPY src/serving .
+
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Copy application code
-COPY src/serving .
 
 # Expose Flask port
 EXPOSE 5000
