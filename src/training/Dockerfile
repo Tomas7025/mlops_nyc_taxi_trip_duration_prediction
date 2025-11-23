@@ -36,3 +36,4 @@ RUN pip install --upgrade pip && \
 # ENTRYPOINT ["uv", "run", "python", "train_model.py"]
 ENTRYPOINT ["python", "train_model.py"]
 # ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
+ 
