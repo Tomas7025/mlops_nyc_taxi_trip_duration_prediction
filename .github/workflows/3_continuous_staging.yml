@@ -40,7 +40,7 @@ jobs:
       - name: Set lowercase repo name
         run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - run: docker pull ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:staging
+      - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:staging
 
       - name: Start serving container
         env:
@@ -54,7 +54,7 @@ jobs:
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
-            ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:staging
+            ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:staging
           
           # Wait for Flask to be ready
           sleep 10
@@ -78,6 +78,6 @@ jobs:
       # This is the image that will be used to deploy the system
       - name: Push production container tag
         run: |
-          docker tag ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:staging \
-                     ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:production
-          docker push ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:production
+          docker tag ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:staging \
+                     ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production
+          docker push ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production

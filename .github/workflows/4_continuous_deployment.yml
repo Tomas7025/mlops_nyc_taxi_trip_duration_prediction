@@ -44,7 +44,7 @@ jobs:
       - name: Set lowercase repo name
         run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
       
-      - run: docker pull ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:production
+      - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production
       - run: docker stop serving-app || true
       - run: docker rm serving-app || true
 
@@ -58,4 +58,4 @@ jobs:
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
-          ${{ env.REGISTRY }}/${{ github.REPO_LOWER }}/serving:production
+          ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production
