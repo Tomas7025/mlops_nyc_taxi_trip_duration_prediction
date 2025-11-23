@@ -48,6 +48,7 @@ jobs:
       
       - run: pip install dvc dvc-ssh
       - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
       - run: dvc pull -v -j 4
 
       # Run training container which runs the training script within
@@ -102,7 +103,7 @@ jobs:
       # Run end to end tests, this will test the serving app to see if it is working ok
       # Additional metrics and verification can assess performance metrics as well
       - name: Run Staging tests
-        run: uv run pytest tests/test_e2e.py -v
+        run: uv run pytest src/tests/test_e2e.py -v
 
       - name: Show container logs on failure
         if: failure()
@@ -137,5 +138,5 @@ jobs:
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           FROM_ALIAS: ${{ github.sha }}
           TO_ALIAS: staging
-        run: uv run python model-promotion/promote_model.py
+        run: uv run python src/model-promotion/promote_model.py
 
