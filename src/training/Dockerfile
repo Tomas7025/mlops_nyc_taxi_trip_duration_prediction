@@ -19,11 +19,10 @@ RUN pip install uv
 WORKDIR /app
 
 # ---- Copy dependency files ----
-COPY src/training/ src/
+COPY src/training/ .
 
-# ---- Copy the transformers.py file and __init__.py ----
-COPY src/transformers.py src/
-COPY src/__init__.py src/
+# ---- Copy the transformers.py ----
+COPY src/transformers.py .
 
 # ---- Get the data/ volume ----
 VOLUME ["/data"]
@@ -32,5 +31,5 @@ VOLUME ["/data"]
 RUN uv sync --frozen
 
 # ---- By default, run the CI training ----
-# ENTRYPOINT ["uv", "run", "python", "train_model.py"]
-ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
+ENTRYPOINT ["uv", "run", "python", "train_model.py"]
+# ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
