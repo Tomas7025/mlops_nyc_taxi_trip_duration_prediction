@@ -3,11 +3,3 @@ mlflow-skinny==3.5.1
 mlflow-tracing==3.5.1
 pandas==2.3.3
 cloudpickle==3.1.1
-dvc==3.63.0
-dvc-data==3.16.12
-dvc-http==2.32.0
-dvc-objects==5.1.2
-dvc-render==1.0.2
-dvc-studio-client==0.22.0
-dvc-task==0.40.2
-dvc-ssh

@@ -32,10 +32,6 @@ VOLUME ["/app/data"]
 RUN pip install --upgrade pip && \
    pip install -r requirements.txt
 
-# ---- DVC ----
-RUN dvc pull -v -j 4
-
-
 # ---- By default, run the CI training ----
 # ENTRYPOINT ["uv", "run", "python", "train_model.py"]
 ENTRYPOINT ["python", "train_model.py"]

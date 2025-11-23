@@ -46,6 +46,8 @@ jobs:
       # Download training image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
       
+      - run: dvc pull -v -j 4
+
       # Run training container which runs the training script within
       # The training script will select the "best" model and tag it with the sha of the commit in mlflow
       - name: Run training
@@ -56,6 +58,7 @@ jobs:
           MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           COMMIT_SHA: ${{ github.sha }}
+        
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/data:/app/data \
