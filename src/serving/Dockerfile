@@ -15,15 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
-# Copy requirements first (for Docker caching)
-COPY requirements.txt /app/
-
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Copy application code
-COPY . /app/
+COPY src/serving .
 
 # Expose Flask port
 EXPOSE 5000
