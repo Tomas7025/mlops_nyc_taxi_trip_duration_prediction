@@ -23,7 +23,7 @@ def promote_model():
     if not mlflow_uri:
         raise RuntimeError("Missing env var MLFLOW_TRACKING_URI")
 
-    mlflow_uri="10.17.0.162:5000"
+    # mlflow_uri="10.17.0.162:5000"
     print(f"Connecting to MLflow at {mlflow_uri}")
     client = MlflowClient(tracking_uri=mlflow_uri)
 
