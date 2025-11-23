@@ -25,7 +25,7 @@ COPY src/training/ .
 COPY src/transformers.py .
 
 # ---- Get the data/ volume ----
-VOLUME ["/app/data"]
+# VOLUME ["/app/data"]
 
 # ---- Install dependencies (same as CI) ----
 # RUN uv sync --frozen
