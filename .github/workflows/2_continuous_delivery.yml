@@ -38,7 +38,94 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set lowercase repo name
-        run: echo "REPO_LOWER=$(echo '${{ env.REPO_LOWER }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       # Download training image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
+      
+      # Run training container which runs the training script within
+      # The training script will select the "best" model and tag it with the sha of the commit in mlflow
+      - name: Run training
+        env:
+          MLFLOW_TRACKING_URI: "http://dsn2026hotcrp.dei.uc.pt:8080"
+          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
+          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
+          MLFLOW_EXPERIMENT_NAME: "PLACEHOLDER"
+          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          docker run --rm \
+            -e MLFLOW_TRACKING_URI \
+            -e MLFLOW_TRACKING_USERNAME \
+            -e MLFLOW_TRACKING_PASSWORD \
+            -e MLFLOW_MODEL_NAME \
+            -e MLFLOW_EXPERIMENT_NAME \
+            -e COMMIT_SHA \
+            ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
+
+      # Download serving image built in the previous stage
+      - run: docker pull ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }}
+
+      # Start serving image
+      # It is configured to load the model passed in env variable MLFLOW_MODEL_NAME and alias MODEL_ALIAS
+      - name: Start serving container
+        env:
+          MLFLOW_TRACKING_URI: "PLACEHOLDER"
+          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
+          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
+          MODEL_ALIAS: ${{ github.sha }}
+          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+        run: |
+          docker run -d \
+            --name serving-app \
+            -p 8080:8080 \
+            -e MLFLOW_TRACKING_URI \
+            -e MLFLOW_TRACKING_USERNAME \
+            -e MLFLOW_TRACKING_PASSWORD \
+            -e MODEL_ALIAS \
+            -e MLFLOW_MODEL_NAME \
+            ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }}
+          
+          # Wait for Flask to be ready
+          sleep 10
+
+      # Run end to end tests, this will test the serving app to see if it is working ok
+      # Additional metrics and verification can assess performance metrics as well
+      - name: Run Staging tests
+        run: uv run pytest tests/test_e2e.py -v
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Flask logs ==="
+          docker logs serving-app || true
+
+      # Log in to GitHub Container Registry (GHCR)
+      # This is the repository where we will upload our images once they have been validated
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag serving image with staging; this image will be used for further testing in staging
+      # Push serving image to repository
+      - name: Push serving staging image
+        run: |
+          docker tag ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }} \
+                     ${{ env.REGISTRY }}/${{ github.repository }}/serving:staging
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/serving:staging
+
+      # Promote selected model to staging to be further validated
+      # The script will look for the MLFLOW_MODEL_NAME and promote it from FROM_ALIAS to TO_ALIAS
+      - name: Promote model to staging
+        env:
+          MLFLOW_TRACKING_URI: "http://dsn2026hotcrp.dei.uc.pt:8080"
+          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
+          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
+          MLFLOW_EXPERIMENT_NAME: "PLACEHOLDER"
+          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+          FROM_ALIAS: ${{ github.sha }}
+          TO_ALIAS: staging
+        run: uv run python model-promotion/promote_model.py
+
