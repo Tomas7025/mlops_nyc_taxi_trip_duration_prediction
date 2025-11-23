@@ -197,7 +197,7 @@ def train_model():
 		model.fit(X_train,y_train)
 
 		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
+		mlflow.sklearn.log_model(model, artifact_path=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
 		y_pred = model.predict(X_test)
 
