@@ -149,7 +149,7 @@ def train_model():
 	# Configure MLflow to use local server
 	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 	# mlflow.set_tracking_uri(mlflow_uri)
-	mlflow.set_tracking_uri("http://10.17.0.162:5000")
+	mlflow.set_tracking_uri("http://host.docker.internal:5000")
 	
 	# Set experiment
 	mlflow.set_experiment(EXP_NAME)
