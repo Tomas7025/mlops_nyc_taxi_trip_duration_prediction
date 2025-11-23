@@ -67,7 +67,6 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/data:/app/data \
-            --network host \
             -e MLFLOW_TRACKING_URI \
             -e MLFLOW_TRACKING_USERNAME \
             -e MLFLOW_TRACKING_PASSWORD \
@@ -92,7 +91,6 @@ jobs:
         run: |
           docker run -d \
             -v ${{ github.workspace }}/data:/app/data \
-            --network host \
             --name serving-app \
             -p 8080:8080 \
             -e MLFLOW_TRACKING_URI \
