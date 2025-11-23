@@ -203,7 +203,7 @@ def train_model():
 
 		calculate_metrics(y_test, y_pred)
 
-		model_uri = f"runs:/{run.info.run_id}/model"
+		model_uri = f"runs:/{run.info.run_id}/{MODEL_NAME}"
 		print(f"\nmodel_uri: {model_uri}")
 
 
