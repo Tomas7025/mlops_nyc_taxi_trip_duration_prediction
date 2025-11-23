@@ -148,7 +148,8 @@ def train_model():
 	
 	# Configure MLflow to use local server
 	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-	mlflow.set_tracking_uri(mlflow_uri)
+	# mlflow.set_tracking_uri(mlflow_uri)
+	mlflow.set_tracking_uri("http://10.17.0.162:5000")
 	
 	# Set experiment
 	mlflow.set_experiment(EXP_NAME)
@@ -197,7 +198,7 @@ def train_model():
 		model.fit(X_train,y_train)
 
 		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, artifact_path=MODEL_NAME, signature=signature, input_example=X_train[:5])
+		mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
 		y_pred = model.predict(X_test)
 
@@ -241,4 +242,3 @@ def train_model():
 if __name__ == '__main__':
 	# main()
 	train_model()
-
