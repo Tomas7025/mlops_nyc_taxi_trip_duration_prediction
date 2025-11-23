@@ -1,5 +1,5 @@
 # Use a lightweight Python base image
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 # Set environment vars to avoid Python buffering issues
 ENV PYTHONUNBUFFERED=1 \
