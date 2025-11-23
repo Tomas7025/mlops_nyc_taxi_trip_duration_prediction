@@ -42,4 +42,16 @@ jobs:
           outputs: type=docker,dest=/tmp/training.tar
       - run: docker load --input /tmp/training.tar
 
+      # Build serving image and upload to artifacts for use in continuous delivery
+      - name: Build serving image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./src/serving/Dockerfile
+          platforms: linux/amd64
+          push: false
+          tags: serving:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/serving.tar
+      - run: docker load --input /tmp/serving.tar
+
       
