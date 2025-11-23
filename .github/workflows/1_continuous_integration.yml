@@ -11,6 +11,8 @@ on:
 
   workflow_dispatch:
 
+env:
+  REGISTRY: "ghcr.io"
 jobs:
   test-unit:
     runs-on: ubuntu-latest
@@ -56,22 +58,27 @@ jobs:
 
       - name: Set lowercase repo name
         run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
+      
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Tag training image with current commit sha
       # This image will not be used anymore, thus will not be promoted to staging or production so it is linked only to the commit
       # Push training image to repository
       - name: Push training image
         run: |
-          docker tag training:${{ github.sha }} ghcr.io/${{ env.REPO_LOWER }}/training:${{ github.sha }}
-          docker push ghcr.io/${{ env.REPO_LOWER }}/training:${{ github.sha }}
+          docker tag training:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
 
 
       # Tag serving image with commit sha; this image will be used for further testing in the following workflows
       # Push serving image to repository
       - name: Push serving staging image
         run: |
-          docker tag serving:${{ github.sha }} ghcr.io/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
-          docker push ghcr.io/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
+          docker tag serving:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
 
       
