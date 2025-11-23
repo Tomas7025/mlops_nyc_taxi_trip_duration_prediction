@@ -12,8 +12,10 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: "ghcr.io"
-  
+  REGISTRY: ${{ vars.REGISTRY }}
+  MLFLOW_TRACKING_URI: ${{ vars.MLFLOW_TRACKING_URI }}
+  MLFLOW_EXPERIMENT_NAME: ${{ vars.MLFLOW_EXPERIMENT_NAME }}
+  MLFLOW_MODEL_NAME: ${{ vars.MLFLOW_MODEL_NAME }}
 
 jobs:
 
@@ -47,11 +49,11 @@ jobs:
       # The training script will select the "best" model and tag it with the sha of the commit in mlflow
       - name: Run training
         env:
-          MLFLOW_TRACKING_URI: "http://dsn2026hotcrp.dei.uc.pt:8080"
-          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
-          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
-          MLFLOW_EXPERIMENT_NAME: "PLACEHOLDER"
-          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
+          MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           docker run --rm \
@@ -70,11 +72,11 @@ jobs:
       # It is configured to load the model passed in env variable MLFLOW_MODEL_NAME and alias MODEL_ALIAS
       - name: Start serving container
         env:
-          MLFLOW_TRACKING_URI: "PLACEHOLDER"
-          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
-          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
+          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           MODEL_ALIAS: ${{ github.sha }}
-          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+          MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
           docker run -d \
             --name serving-app \
@@ -120,11 +122,11 @@ jobs:
       # The script will look for the MLFLOW_MODEL_NAME and promote it from FROM_ALIAS to TO_ALIAS
       - name: Promote model to staging
         env:
-          MLFLOW_TRACKING_URI: "http://dsn2026hotcrp.dei.uc.pt:8080"
-          MLFLOW_TRACKING_USERNAME: "PLACEHOLDER"
-          MLFLOW_TRACKING_PASSWORD: "PLACEHOLDER"
-          MLFLOW_EXPERIMENT_NAME: "PLACEHOLDER"
-          MLFLOW_MODEL_NAME: "PLACEHOLDER"
+          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
+          MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           FROM_ALIAS: ${{ github.sha }}
           TO_ALIAS: staging
         run: uv run python model-promotion/promote_model.py
