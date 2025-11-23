@@ -70,6 +70,8 @@ jobs:
       - name: Promote model to production
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
+          MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           FROM_ALIAS: staging
           TO_ALIAS: production
         run: uv run python src/model-promotion/promote_model.py
