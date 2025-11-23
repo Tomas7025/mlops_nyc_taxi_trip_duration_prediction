@@ -16,21 +16,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install uv
 
 # ---- Set work directory ----
-WORKDIR /app
+# WORKDIR /src
 
 # ---- Copy dependency files ----
-COPY training/ .
+# COPY training/ .
 
 # ---- Copy the transformers.py file and __init__.py ----
-COPY transformers.py .
-COPY __init__.py .
+# COPY transformers.py .
+# COPY __init__.py .
 
 # ---- Get the data/ volume ----
-VOLUME ["/data"]
+# VOLUME ["/data"]
 
 # ---- Install dependencies (same as CI) ----
-RUN uv sync --frozen
+# RUN uv sync --frozen
 
 # ---- By default, run the CI training ----
 # ENTRYPOINT ["uv", "run", "python", "train_model.py"]
-ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
+# ENTRYPOINT ["uv", "run", "-m", "src.training.train"]
