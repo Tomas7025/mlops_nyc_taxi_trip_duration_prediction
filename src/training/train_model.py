@@ -15,9 +15,6 @@ import pickle
 # mlflow.set_tracking_uri("http://10.17.0.162:5000")
 
 # Ou se estiveres a usar túnel SSH (fora da VM, mas na VPN):
-import os
-mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-mlflow.set_tracking_uri(mlflow_uri)
 
 # mlflow.set_experiment("nyc_taxi_project")
 
@@ -150,7 +147,7 @@ def train_model():
 	# === mlflow init configs
 	
 	# Configure MLflow to use local server
-	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5050")
+	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 	mlflow.set_tracking_uri(mlflow_uri)
 	
 	# Set experiment
@@ -158,7 +155,8 @@ def train_model():
 
 	with mlflow.start_run() as run:
 		# === Read dataset ===
-		data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
+		# data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
+		data = pd.read_parquet('data/raw/yellow_lite.parquet')
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===

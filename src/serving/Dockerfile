@@ -30,7 +30,7 @@ EXPOSE 5000
 
 # Set default environment variables (override in docker run or compose)
 ENV MLFLOW_ALLOWED_HOSTS="*" \
-    MLFLOW_TRACKING_URI="http://localhost:5050"
+    MLFLOW_TRACKING_URI="http://localhost:5000"
 
 # Start the Flask server
-CMD ["python", "app.py"]
+CMD ["python", "server.py"]

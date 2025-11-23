@@ -1,0 +1,5 @@
+outs:
+- md5: 578c118c61b676d64b5e7d5affc64643
+  size: 35343
+  hash: md5
+  path: yellow_lite.parquet
