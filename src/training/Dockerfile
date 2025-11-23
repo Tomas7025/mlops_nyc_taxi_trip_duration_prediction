@@ -27,13 +27,14 @@ COPY src/transformers.py .
 # ---- Get the data/ volume ----
 VOLUME ["/app/data"]
 
-# ---- DVC ----
-RUN dvc pull -v -j 4
-
 # ---- Install dependencies (same as CI) ----
 # RUN uv sync --frozen
 RUN pip install --upgrade pip && \
    pip install -r requirements.txt
+
+# ---- DVC ----
+RUN dvc pull -v -j 4
+
 
 # ---- By default, run the CI training ----
 # ENTRYPOINT ["uv", "run", "python", "train_model.py"]
