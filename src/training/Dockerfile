@@ -19,11 +19,11 @@ RUN pip install uv
 WORKDIR /app
 
 # ---- Copy dependency files ----
-COPY src/training/ .
+COPY src/training/ src/
 
 # ---- Copy the transformers.py file and __init__.py ----
-COPY src/transformers.py .
-COPY src/__init__.py .
+COPY src/transformers.py src/
+COPY src/__init__.py src/
 
 # ---- Get the data/ volume ----
 VOLUME ["/data"]
