@@ -21,11 +21,16 @@ WORKDIR /app
 # ---- Copy dependency files ----
 COPY training/ .
 
-# ---- Copy the transformers.py file ----
+# ---- Copy the transformers.py file and __init__.py ----
 COPY transformers.py .
+COPY __init__.py .
+
+# ---- Get the data/ volume ----
+VOLUME ["/data"]
 
 # ---- Install dependencies (same as CI) ----
 RUN uv sync --frozen
 
 # ---- By default, run the CI training ----
-ENTRYPOINT ["uv", "run", "python", "train_model.py"]
+# ENTRYPOINT ["uv", "run", "python", "train_model.py"]
+ENTRYPOINT ["uv", "run", "-m", "src.training.train"]

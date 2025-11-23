@@ -8,7 +8,7 @@ from sklearn.metrics import root_mean_squared_error, mean_squared_error,r2_score
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 
-from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+from src.transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 import pickle
 # Se estiveres dentro da VM:
