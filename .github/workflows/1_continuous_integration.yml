@@ -54,20 +54,24 @@ jobs:
           outputs: type=docker,dest=/tmp/serving.tar
       - run: docker load --input /tmp/serving.tar
 
+      - name: Set lowercase repo name
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+
       # Tag training image with current commit sha
       # This image will not be used anymore, thus will not be promoted to staging or production so it is linked only to the commit
       # Push training image to repository
       - name: Push training image
         run: |
-          docker tag training:${{ github.sha }} ${{ env.REGISTRY }}/${{ toLower(github.repository) }}/training:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ toLower(github.repository) }}/training:${{ github.sha }}
+          docker tag training:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
 
 
       # Tag serving image with commit sha; this image will be used for further testing in the following workflows
       # Push serving image to repository
       - name: Push serving staging image
         run: |
-          docker tag serving:${{ github.sha }} ${{ env.REGISTRY }}/${{ toLower(github.repository) }}/serving:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ toLower(github.repository) }}/serving:${{ github.sha }}
+          docker tag serving:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
 
       
