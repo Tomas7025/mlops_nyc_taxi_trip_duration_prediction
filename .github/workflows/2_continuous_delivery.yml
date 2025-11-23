@@ -8,11 +8,12 @@ on:
   workflow_run:
     workflows: ["1 - Continuous Integration"]
     types: [completed]
+    branches: [ joao-1-2-actions ]
 
   workflow_dispatch:
 
 env:
-  REGISTRY: ${{ vars.REGISTRY }}
+  REGISTRY: "ghcr.io"
   
 
 jobs:
