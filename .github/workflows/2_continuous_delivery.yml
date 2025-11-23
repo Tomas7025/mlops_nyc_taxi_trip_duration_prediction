@@ -47,8 +47,8 @@ jobs:
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
       
       - run: pip install dvc dvc-ssh
-      - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
-      # - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
+      - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
       - run: dvc pull -v -j 4
 
       # Run training container which runs the training script within
