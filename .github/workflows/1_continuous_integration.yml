@@ -54,4 +54,20 @@ jobs:
           outputs: type=docker,dest=/tmp/serving.tar
       - run: docker load --input /tmp/serving.tar
 
+      # Tag training image with current commit sha
+      # This image will not be used anymore, thus will not be promoted to staging or production so it is linked only to the commit
+      # Push training image to repository
+      - name: Push training image
+        run: |
+          docker tag training:${{ github.sha }} ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/training:${{ github.sha }}
+
+
+      # Tag serving image with commit sha; this image will be used for further testing in the following workflows
+      # Push serving image to repository
+      - name: Push serving staging image
+        run: |
+          docker tag serving:${{ github.sha }} ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/serving:${{ github.sha }}
+
       
