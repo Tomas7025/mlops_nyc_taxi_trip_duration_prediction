@@ -6,7 +6,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 from sklearn.pipeline import Pipeline
-from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+from src.transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 # Allow all hosts to connect to Mlflow
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
