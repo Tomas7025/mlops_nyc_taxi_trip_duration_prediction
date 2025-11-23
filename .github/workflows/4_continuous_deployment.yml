@@ -41,6 +41,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repo name
+        run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      
       - run: docker pull ${{ env.REGISTRY }}/${{ github.repository }}/serving:production
       - run: docker stop serving-app || true
       - run: docker rm serving-app || true
