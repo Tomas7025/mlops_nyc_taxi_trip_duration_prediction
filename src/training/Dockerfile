@@ -22,8 +22,8 @@ WORKDIR /app
 COPY training/ .
 
 # ---- Copy the transformers.py file and __init__.py ----
-COPY transformers.py .
-COPY __init__.py .
+COPY src/transformers.py .
+COPY src/__init__.py .
 
 # ---- Get the data/ volume ----
 VOLUME ["/data"]
