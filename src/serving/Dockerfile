@@ -1,36 +1,16 @@
-# Use a lightweight Python base image
-FROM python:3.13-slim
-
-# Set environment vars to avoid Python buffering issues
-ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
-# Install system dependencies required by MLflow, sklearn, transformers
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
 WORKDIR /app
 
-# Copy application code
-COPY src/serving .
+# Copy full src
+COPY src/ .
 
-# ---- Copy the transformers.py file and __init__.py ----
-COPY src/transformers.py .
-
-# Install Python dependencies
+# Install dependencies
 RUN pip install --upgrade pip && \
-   pip install -r requirements.txt
+    pip install -r requirements.txt
 
-# Expose Flask port
-EXPOSE 5000
+# Expose port 8080 to match your tests
+EXPOSE 8080
 
-# Set default environment variables (override in docker run or compose)
-ENV MLFLOW_ALLOWED_HOSTS="*" \
-    MLFLOW_TRACKING_URI="http://localhost:5000"
-
-# Start the Flask server
+# Start server on 0.0.0.0:8080
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_PORT=8080
 CMD ["python", "server.py"]
