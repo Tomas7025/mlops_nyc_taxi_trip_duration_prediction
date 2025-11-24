@@ -12,7 +12,7 @@ from src.transformers import columnDropperTransformer,pickupDataTransformer,oneH
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
 # Configure MLflow tracking URI and authentication
-# mlflow.set_tracking_uri("http://10.17.0.162:5000")
+mlflow.set_tracking_uri("http://10.17.0.162:5000")
 # mlflow.set_tracking_uri("http://127.0.0.1:5000")
 app = Flask(__name__)
 
