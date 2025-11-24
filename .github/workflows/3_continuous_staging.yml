@@ -62,6 +62,15 @@ jobs:
           
           # Wait for Flask to be ready
           sleep 10
+      
+      - name: Debug container
+        run: |
+          echo "=== docker ps ==="
+          docker ps
+          echo "=== logs ==="
+          docker logs serving-app || true
+          echo "=== curl ==="
+          curl -v http://localhost:8080/health || true
 
       # Here we are just running the same E2E tests, but in real systems we would run
       # the system in a preproduction environment, that would manually or automatically
