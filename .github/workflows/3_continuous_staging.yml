@@ -42,6 +42,10 @@ jobs:
 
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:staging
 
+      - name: Clean previous container if exists
+        run: |
+          docker rm -f serving-app || true
+
       - name: Start serving container
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
