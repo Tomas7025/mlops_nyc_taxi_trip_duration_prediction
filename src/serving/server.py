@@ -27,7 +27,7 @@ MODEL_ALIAS = os.getenv("MODEL_ALIAS")
 
 # Try to load model once on startup
 try:
-    app.config["MODEL"] = mlflow.pyfunc.load_model(
+    app.config["MODEL"] = mlflow.sklearn.load_model(
         model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
     )
     print("Model loaded successfully at startup.")
@@ -36,12 +36,12 @@ except Exception as e:
     print(f"Could not load model at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
 
-#not being used rn
-def load_model(model_name):
-    path = "models/" + model_name + ".pkl"
-    with open(path, "rb") as f:
-        model = pickle.load(f)
-    return model
+# #not being used rn
+# def load_model(model_name):
+#     path = "models/" + model_name + ".pkl"
+#     with open(path, "rb") as f:
+#         model = pickle.load(f)
+#     return model
 
 
 #Endpoints
@@ -104,7 +104,7 @@ def predict():
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
+        model = mlflow.sklearn.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
         app.config["MODEL"] = model
         return jsonify(message="Model reloaded successfully.")
     except Exception as e:
