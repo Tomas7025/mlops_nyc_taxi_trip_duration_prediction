@@ -6,7 +6,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 from sklearn.pipeline import Pipeline
-from src.transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 # Allow all hosts to connect to Mlflow
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
@@ -16,8 +16,8 @@ mlflow.set_tracking_uri("http://10.17.0.162:5000")
 # mlflow.set_tracking_uri("http://127.0.0.1:5000")
 app = Flask(__name__)
 
-CAT_COLS = ['vendor_id','rate_code','payment_type']
-NUM_COLS = ['passenger_count','trip_distance','pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','fare_amount','surcharge','mta_tax','tip_amount','tolls_amount','total_amount']
+CAT_COLS = ['VendorID','RatecodeID','payment_type']
+NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
 
 MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
 if not MODEL_NAME:
@@ -79,13 +79,12 @@ def predict():
         user_input = data["inputs"]
 
         X = np.array(user_input)
-        baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','dropoff_datetime'])),
-									('lower_case',lowerCaseTransformer()),
+        baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
 									('data_transformer',pickupDataTransformer()),
 									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
 
-        baseline_pipeline.fit(X)
+        baseline_pipeline.fit(X) #???? não faz sentido temos de ir buscar a pipeline ao MLFlow e usar essa, mas ya deixo assim por agora
         X = baseline_pipeline.transform(X)
 
         #if the user sends only one sample
