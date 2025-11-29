@@ -48,20 +48,20 @@ jobs:
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
       
       - run: pip install dvc dvc-ssh
-      - run: dvc remote modify --local local_storage url /opt/dvc_storage
-      # - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
-      # - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
       
-      # Clear local DVC cache to force re-verification and fix potential corruption
-      - run: rm -rf .dvc/cache
-      
-      # Explicitly create cache directory to ensure permissions
-      - run: mkdir -p .dvc/cache
+      # OPTIMIZATION: Use the local storage directly as cache (Zero Copy)
+      # This acts like a "Volume", avoiding duplication and download time.
+      - run: |
+          dvc config cache.dir /opt/dvc_storage
+          dvc config cache.type symlink
+          dvc config cache.shared group
 
-      # Debug DVC configuration
-      - run: dvc config -l
-      
-      - run: dvc pull -v -j 4
+      # FIX: Revert DVC files to master version because current branch has invalid hashes
+      - run: |
+          git fetch origin master
+          git checkout origin/master -- data/raw/*.dvc
+          
+      - run: dvc checkout
 
       # Run training container which runs the training script within
       # The training script will select the "best" model and tag it with the sha of the commit in mlflow
