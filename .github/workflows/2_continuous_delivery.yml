@@ -5,9 +5,9 @@ permissions: write-all
 
 on:
   # Runs when the previous stage finished
-  workflow_run:
-    workflows: ["1 - Continuous Integration"]
-    types: [completed]
+  # workflow_run:
+  #   workflows: ["1 - Continuous Integration"]
+  #   types: [completed]
 
   workflow_dispatch:
 
