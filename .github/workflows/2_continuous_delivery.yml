@@ -24,7 +24,7 @@ jobs:
     # Run only if previous stage finished successfully
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -105,6 +105,11 @@ jobs:
         run: |
           echo "=== Flask logs ==="
           docker logs serving-app || true
+
+      - name: Clean up serving container
+        if: always()
+        run: |
+          docker rm -f serving-app || true
 
       # Log in to GitHub Container Registry (GHCR)
       # This is the repository where we will upload our images once they have been validated
