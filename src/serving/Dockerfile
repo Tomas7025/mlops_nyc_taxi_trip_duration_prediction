@@ -15,15 +15,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
+COPY src/training/requirements.txt .
+# ---- Install dependencies (same as CI) ----
+# RUN uv sync --frozen
+RUN pip install --upgrade pip && \
+   pip install -r requirements.txt
+
 # Copy application code
 COPY src/serving .
 
 # ---- Copy the transformers.py file and __init__.py ----
 COPY src/transformers.py .
 
-# Install Python dependencies
-RUN pip install --upgrade pip && \
-   pip install -r requirements.txt
 
 # # Expose Flask port
 # EXPOSE 5000

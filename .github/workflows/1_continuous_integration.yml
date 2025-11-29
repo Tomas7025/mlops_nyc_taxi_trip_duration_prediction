@@ -16,7 +16,7 @@ env:
 jobs:
   test-unit:
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
   build-images:
     # Passed tests, now build docker images for training and serving
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
     needs: test-unit
     steps:
       - uses: actions/checkout@v4

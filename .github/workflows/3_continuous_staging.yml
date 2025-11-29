@@ -21,7 +21,7 @@ jobs:
   stage-tests:
     # Run only if previous stage finished successfully 
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +77,10 @@ jobs:
       # apply  A/B testing, shadow testing and other approaches to measure
       # and validate the performance of the model before moving to production
       - run: uv run pytest src/tests/test_e2e.py -v
+
+      - name: Clean up serving container
+        if: always()
+        run: docker rm -f serving-app || true
 
       # When reaching the stage both the serving and the model will have passed
       # the necessary tests and we promote to production
