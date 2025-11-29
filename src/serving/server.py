@@ -99,6 +99,9 @@ def predict():
         # Convert input to DataFrame
         df = pd.DataFrame(user_input, columns=INPUT_COLS)
         
+        # Ensure datetime column is actually datetime (required by pickupDataTransformer)
+        df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
+
         # Add missing columns required by pipeline (to be dropped)
         df['tpep_dropoff_datetime'] = pd.Timestamp.now() # Dummy
         df['congestion_surcharge'] = 0.0
@@ -114,6 +117,7 @@ def predict():
         })
 
     except Exception as e:
+        print(f"Error during prediction: {e}", flush=True)
         return jsonify({"error": str(e)}), 400
 
 @app.route("/reload", methods=["GET"])
