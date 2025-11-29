@@ -55,6 +55,12 @@ jobs:
       # Clear local DVC cache to force re-verification and fix potential corruption
       - run: rm -rf .dvc/cache
       
+      # Explicitly create cache directory to ensure permissions
+      - run: mkdir -p .dvc/cache
+
+      # Debug DVC configuration
+      - run: dvc config -l
+      
       - run: dvc pull -v -j 4
 
       # Run training container which runs the training script within
