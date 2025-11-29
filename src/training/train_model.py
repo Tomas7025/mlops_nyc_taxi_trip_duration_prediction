@@ -1,5 +1,6 @@
 import mlflow
 import pandas as pd
+import joblib
 
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
@@ -148,6 +149,8 @@ def train_model():
 	
 	# Configure MLflow to use local server
 	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+	# mlflow.set_tracking_uri(mlflow_uri) 
+	# mlflow_uri="10.17.0.162:5000"
 	mlflow.set_tracking_uri(mlflow_uri)
 	
 	# Set experiment
@@ -175,20 +178,22 @@ def train_model():
 		X_test = baseline_pipeline.transform(X_test)
 		print(X_train.index.equals(y_train.index))
 
-		# === Compute correlations ===
-		data_train = X_train.copy()
-		data_train['duration'] = y_train.values
-		print(y_train.head(100))
-		print(X_train.head(100))
-		print(data_train.head(100))
-		corr = data_train.corr()['duration'].dropna().sort_values(key=abs, ascending=False)
-		print("\n📊 Feature correlations with target:")
-		print(corr.head(20))
+		# Comentei por agora para testar com tudo
+		#
+		# # === Compute correlations ===
+		# data_train = X_train.copy()
+		# data_train['duration'] = y_train.values
+		# print(y_train.head(100))
+		# print(X_train.head(100))
+		# print(data_train.head(100))
+		# corr = data_train.corr()['duration'].dropna().sort_values(key=abs, ascending=False)
+		# print("\n📊 Feature correlations with target:")
+		# print(corr.head(20))
 
-		# === Select top correlated features ===
-		top_features = corr.index[1:5+1].tolist()  # skip target itself
-		X_train = X_train[top_features]
-		X_test = X_test[top_features]
+		# # === Select top correlated features ===
+		# top_features = corr.index[1:5+1].tolist()  # skip target itself
+		# X_train = X_train[top_features]
+		# X_test = X_test[top_features]
 
 		print(X_train)
 
@@ -196,14 +201,16 @@ def train_model():
 		model = LinearRegression()
 		model.fit(X_train,y_train)
 
+		joblib.dump(baseline_pipeline, "pipeline.pkl")
+		mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
 		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, name="model", signature=signature, input_example=X_train[:5])
+		mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
 		y_pred = model.predict(X_test)
 
 		calculate_metrics(y_test, y_pred)
 
-		model_uri = f"runs:/{run.info.run_id}/model"
+		model_uri = f"runs:/{run.info.run_id}/{MODEL_NAME}"
 		print(f"\nmodel_uri: {model_uri}")
 
 

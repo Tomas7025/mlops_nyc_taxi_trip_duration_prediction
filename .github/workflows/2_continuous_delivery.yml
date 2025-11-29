@@ -24,7 +24,7 @@ jobs:
     # Run only if previous stage finished successfully
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -57,9 +57,7 @@ jobs:
       # The training script will select the "best" model and tag it with the sha of the commit in mlflow
       - name: Run training
         env:
-          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_TRACKING_URI: "http://10.17.0.162:5000"
           MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           COMMIT_SHA: ${{ github.sha }}
@@ -68,8 +66,6 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}/data:/app/data \
             -e MLFLOW_TRACKING_URI \
-            -e MLFLOW_TRACKING_USERNAME \
-            -e MLFLOW_TRACKING_PASSWORD \
             -e MLFLOW_MODEL_NAME \
             -e MLFLOW_EXPERIMENT_NAME \
             -e COMMIT_SHA \
@@ -78,13 +74,12 @@ jobs:
       # Download serving image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
 
+
       # Start serving image
       # It is configured to load the model passed in env variable MLFLOW_MODEL_NAME and alias MODEL_ALIAS
       - name: Start serving container
         env:
-          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_TRACKING_URI: "http://10.17.0.162:5000"
           MODEL_ALIAS: ${{ github.sha }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
@@ -93,8 +88,6 @@ jobs:
             --name serving-app \
             -p 8080:8080 \
             -e MLFLOW_TRACKING_URI \
-            -e MLFLOW_TRACKING_USERNAME \
-            -e MLFLOW_TRACKING_PASSWORD \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
@@ -133,9 +126,7 @@ jobs:
       # The script will look for the MLFLOW_MODEL_NAME and promote it from FROM_ALIAS to TO_ALIAS
       - name: Promote model to staging
         env:
-          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_TRACKING_URI: "http://10.17.0.162:5000"
           MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
           FROM_ALIAS: ${{ github.sha }}
@@ -143,4 +134,3 @@ jobs:
         run: uv run python src/model-promotion/promote_model.py
 
 
-  

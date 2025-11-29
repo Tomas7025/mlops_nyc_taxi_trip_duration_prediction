@@ -6,18 +6,18 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 from sklearn.pipeline import Pipeline
-from src.transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 # Allow all hosts to connect to Mlflow
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
 # Configure MLflow tracking URI and authentication
-# mlflow.set_tracking_uri("http://10.17.0.162:5000")
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://10.17.0.162:5000")
+# mlflow.set_tracking_uri("http://127.0.0.1:5000")
 app = Flask(__name__)
 
-CAT_COLS = ['vendor_id','rate_code','payment_type']
-NUM_COLS = ['passenger_count','trip_distance','pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','fare_amount','surcharge','mta_tax','tip_amount','tolls_amount','total_amount']
+CAT_COLS = ['VendorID','RatecodeID','payment_type']
+NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
 
 MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
 if not MODEL_NAME:
@@ -27,7 +27,7 @@ MODEL_ALIAS = os.getenv("MODEL_ALIAS")
 
 # Try to load model once on startup
 try:
-    app.config["MODEL"] = mlflow.pyfunc.load_model(
+    app.config["MODEL"] = mlflow.sklearn.load_model(
         model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
     )
     print("Model loaded successfully at startup.")
@@ -36,12 +36,12 @@ except Exception as e:
     print(f"Could not load model at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
 
-#not being used rn
-def load_model(model_name):
-    path = "models/" + model_name + ".pkl"
-    with open(path, "rb") as f:
-        model = pickle.load(f)
-    return model
+# #not being used rn
+# def load_model(model_name):
+#     path = "models/" + model_name + ".pkl"
+#     with open(path, "rb") as f:
+#         model = pickle.load(f)
+#     return model
 
 
 #Endpoints
@@ -79,13 +79,12 @@ def predict():
         user_input = data["inputs"]
 
         X = np.array(user_input)
-        baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','dropoff_datetime'])),
-									('lower_case',lowerCaseTransformer()),
+        baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
 									('data_transformer',pickupDataTransformer()),
 									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
 
-        baseline_pipeline.fit(X)
+        baseline_pipeline.fit(X) #???? não faz sentido temos de ir buscar a pipeline ao MLFlow e usar essa, mas ya deixo assim por agora
         X = baseline_pipeline.transform(X)
 
         #if the user sends only one sample
@@ -105,7 +104,7 @@ def predict():
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
+        model = mlflow.sklearn.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
         app.config["MODEL"] = model
         return jsonify(message="Model reloaded successfully.")
     except Exception as e:
@@ -113,7 +112,7 @@ def reload_model():
 
 
 def main():
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
 
 
 if __name__ == "__main__":

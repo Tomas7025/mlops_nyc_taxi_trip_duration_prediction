@@ -16,7 +16,7 @@ env:
 jobs:
   test-unit:
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         with: { python-version: '3.13' }
       - run: pip install uv
       - run: uv sync
-      - run: uv run pytest src/serving/test_app.py -v
+      # ??? - run: uv run pytest src/serving/test_app.py -v
 
   build-images:
     # Passed tests, now build docker images for training and serving

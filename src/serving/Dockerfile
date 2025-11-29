@@ -25,12 +25,12 @@ COPY src/transformers.py .
 RUN pip install --upgrade pip && \
    pip install -r requirements.txt
 
-# Expose Flask port
-EXPOSE 5000
+# # Expose Flask port
+# EXPOSE 5000
 
-# Set default environment variables (override in docker run or compose)
-ENV MLFLOW_ALLOWED_HOSTS="*" \
-    MLFLOW_TRACKING_URI="http://localhost:5000"
+# # Set default environment variables (override in docker run or compose)
+# ENV MLFLOW_ALLOWED_HOSTS="*" \
+#     MLFLOW_TRACKING_URI="http://localhost:5000"
 
 # Start the Flask server
 CMD ["python", "server.py"]
