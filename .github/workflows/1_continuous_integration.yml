@@ -5,9 +5,9 @@ permissions: write-all
 
 on:
   push:
-    branches: [ joao-1-2-actions, master]
+    branches: [ joao-1-2-actions, master, test_lordking_tomas]
   pull_request:
-    branches: [ joao-1-2-actions, master ]
+    branches: [ joao-1-2-actions, master, test_lordking_tomas ]
 
   workflow_dispatch:
 
