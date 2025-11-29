@@ -96,6 +96,7 @@ jobs:
         run: |
           docker run -d \
             -v ${{ github.workspace }}/data:/app/data \
+            -v /opt/mlflow/artifacts:/opt/mlflow/artifacts \
             --name serving-app \
             -p 8080:8080 \
             -e MLFLOW_TRACKING_URI \
