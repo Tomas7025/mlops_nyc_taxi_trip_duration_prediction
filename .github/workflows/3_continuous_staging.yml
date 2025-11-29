@@ -49,7 +49,7 @@ jobs:
       - name: Start serving container
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
-          MODEL_ALIAS: ${{ github.sha }}
+          MODEL_ALIAS: staging
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
           docker run -d \
@@ -58,6 +58,7 @@ jobs:
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
+            -v /opt/mlflow/artifacts:/opt/mlflow/artifacts \
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:staging
           
           # Wait for Flask to be ready
