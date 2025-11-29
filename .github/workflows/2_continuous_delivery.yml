@@ -75,7 +75,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/data:/app/data \
-            -v /opt/dvc_storage:/opt/dvc_storage \ 
+            -v /opt/dvc_storage:/opt/dvc_storage \
             -e MLFLOW_TRACKING_URI \
             -e MLFLOW_MODEL_NAME \
             -e MLFLOW_EXPERIMENT_NAME \
