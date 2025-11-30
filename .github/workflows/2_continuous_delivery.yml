@@ -74,7 +74,7 @@ jobs:
         
         run: |
           docker run --rm \
-            --network host \
+            --network mlflow_docker_default \
             -v ${{ github.workspace }}/data:/app/data \
             -v /opt/dvc_storage:/opt/dvc_storage \
             -e MLFLOW_TRACKING_URI \
@@ -100,7 +100,7 @@ jobs:
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
           docker run -d \
-            --network host \
+            --network mlflow_docker_default \
             -v ${{ github.workspace }}/data:/app/data \
             -v /opt/mlflow/artifacts:/opt/mlflow/artifacts \
             --name serving-app \
