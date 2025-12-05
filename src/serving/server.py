@@ -94,7 +94,7 @@ def predict():
 
         # Handle single sample (list of values) vs batch (list of lists)
         if user_input and isinstance(user_input[0], (int, float, str)):
-             user_input = [user_input]
+            user_input = [user_input]
 
         # Convert input to DataFrame
         df = pd.DataFrame(user_input, columns=INPUT_COLS)
@@ -105,10 +105,10 @@ def predict():
         # Add missing columns required by pipeline (to be dropped)
         df['tpep_dropoff_datetime'] = pd.Timestamp.now() # Dummy
 
-        df.drop(['store_and_fwd_flag','congestion_surcharge','airport_fee'],axis=1)
+        # df.drop(['store_and_fwd_flag','congestion_surcharge','airport_fee'],axis=1)
 
-        # df['congestion_surcharge'] = 0.0
-        # df['airport_fee'] = 0.0
+        df['congestion_surcharge'] = 0.0
+        df['airport_fee'] = 0.0
         
         # Transform
         X = pipeline.transform(df)
