@@ -54,7 +54,7 @@ jobs:
           MODEL_ALIAS: ${{ github.sha }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
-          docker run -d --name serving-app -p 8080:9001 \
+          docker run -d --name serving-app -p 9001:8080 \
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
