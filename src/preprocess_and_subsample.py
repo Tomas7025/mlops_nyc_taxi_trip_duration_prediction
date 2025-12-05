@@ -54,7 +54,7 @@ def main():
 			filename, _ = os.path.splitext(os.path.basename(file))
 			print(filename)
 
-			data = pd.read_parquet('data\\raw\\'+file)
+			data = pd.read_parquet('data/raw/'+file)
 
 			print('Reading Done')
 
@@ -70,6 +70,10 @@ def main():
 
 			print('Subsampling done')
 
+			# garanteeing the output directory exists
+			if not os.path.exists('data/preprocessed/'):
+				os.makedirs('data/preprocessed/')
+
 			data.to_parquet('data/preprocessed/'+filename+'_subsampled_by_hour.parquet')
 
 			print('File Saved')
@@ -80,4 +84,14 @@ def main():
 	return
 
 if __name__ == '__main__':
-	main()
+	# main()
+	parquet_files = [f for f in os.listdir('data/preprocessed') if f.endswith('.parquet')]
+	# join all files into a single dataframe and save as a single parquet file
+	df_list = [pd.read_parquet(os.path.join('data/preprocessed', f)) for f in parquet_files]
+	final_df = pd.concat(df_list, ignore_index=True)
+	# make a little debug print
+	print(f'Final dataframe shape: {final_df.shape}')
+	print(final_df.head())
+	print(final_df.info())
+
+	final_df.to_parquet('data/preprocessed/final_subsampled_dataset.parquet')
