@@ -43,7 +43,7 @@ jobs:
 
       # make a debug print to see if the ip of the machine is correct
       - name: Print machine IP
-        run: hostname -I || hostname -i"
+        run: ip addr show || true
 
       - name: Set lowercase repo name
         run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
