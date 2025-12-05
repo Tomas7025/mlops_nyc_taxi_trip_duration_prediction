@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 CAT_COLS = ['VendorID','RatecodeID','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
-INPUT_COLS = ['VendorID', 'tpep_pickup_datetime', 'tpep_dropoff_datetime', 'passenger_count', 'trip_distance', 'RatecodeID', 'store_and_fwd_flag', 'PULocationID', 'DOLocationID', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount','congestion_surcharge','airport_fee']
+INPUT_COLS = ['VendorID', 'tpep_pickup_datetime', 'passenger_count', 'trip_distance', 'PULocationID', 'DOLocationID']
 
 MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
 if not MODEL_NAME:
@@ -101,15 +101,7 @@ def predict():
         
         # Ensure datetime column is actually datetime (required by pickupDataTransformer)
         df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
-
-        # Add missing columns required by pipeline (to be dropped)
-        df['tpep_dropoff_datetime'] = pd.Timestamp.now() # Dummy
-
-        # df.drop(['store_and_fwd_flag','congestion_surcharge','airport_fee'],axis=1)
-
-        df['congestion_surcharge'] = 0.0
-        df['airport_fee'] = 0.0
-        
+ 
         # Transform
         X = pipeline.transform(df)
 

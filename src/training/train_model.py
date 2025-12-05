@@ -19,8 +19,8 @@ import pickle
 
 # mlflow.set_experiment("nyc_taxi_project")
 
-CAT_COLS = ['VendorID','RatecodeID','payment_type']
-NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
+CAT_COLS = ['VendorID']
+NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID']
 
 def preprocess_data(data):
 	#data = data.head(1000000) # ! <- limitado a 1000000
@@ -30,6 +30,8 @@ def preprocess_data(data):
 
 	data['RatecodeID'] = pd.to_numeric(data['RatecodeID'], downcast='integer')
 	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
+
+	data.drop(['tpep_dropoff_datetime', 'RatecodeID', 'store_and_fwd_flag', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount','congestion_surcharge','airport_fee'],axis=1)
 
 	return data
 
@@ -73,8 +75,7 @@ def main():
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
-									('data_transformer',pickupDataTransformer()),
+		baseline_pipeline = Pipeline(steps=[('data_transformer',pickupDataTransformer()),
 									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
 		
@@ -91,24 +92,23 @@ def main():
 		baseline_pipeline.fit(X_train)
 		X_train = baseline_pipeline.transform(X_train)
 		X_test = baseline_pipeline.transform(X_test)
-		print(X_train.index.equals(y_train.index))
 
 		# === Compute correlations ===
-		data_train = X_train.copy()
-		data_train['duration'] = y_train.values
-		print(y_train.head(100))
-		print(X_train.head(100))
-		print(data_train.head(100))
-		corr = data_train.corr()['duration'].dropna().sort_values(key=abs, ascending=False)
-		print("\n📊 Feature correlations with target:")
-		print(corr.head(20))
+		# data_train = X_train.copy()
+		# data_train['duration'] = y_train.values
+		# print(y_train.head(100))
+		# print(X_train.head(100))
+		# print(data_train.head(100))
+		# corr = data_train.corr()['duration'].dropna().sort_values(key=abs, ascending=False)
+		# print("\n📊 Feature correlations with target:")
+		# print(corr.head(20))
 
-		# === Select top correlated features ===
-		top_features = corr.index[1:5+1].tolist()  # skip target itself
-		X_train = X_train[top_features]
-		X_test = X_test[top_features]
+		# # === Select top correlated features ===
+		# top_features = corr.index[1:5+1].tolist()  # skip target itself
+		# X_train = X_train[top_features]
+		# X_test = X_test[top_features]
 
-		print(X_train)
+		# print(X_train)
 
 			
 		print('Linear Regressor')
@@ -159,12 +159,11 @@ def train_model():
 	with mlflow.start_run() as run:
 		# === Read dataset ===
 		# data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
-		data = pd.read_parquet('data/raw/yellow_lite.parquet')
+		data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
-									('data_transformer',pickupDataTransformer()),
+		baseline_pipeline = Pipeline(steps=[('data_transformer',pickupDataTransformer()),
 									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
 		
@@ -176,7 +175,6 @@ def train_model():
 		baseline_pipeline.fit(X_train)
 		X_train = baseline_pipeline.transform(X_train)
 		X_test = baseline_pipeline.transform(X_test)
-		print(X_train.index.equals(y_train.index))
 
 		# Comentei por agora para testar com tudo
 		#
@@ -194,8 +192,6 @@ def train_model():
 		# top_features = corr.index[1:5+1].tolist()  # skip target itself
 		# X_train = X_train[top_features]
 		# X_test = X_test[top_features]
-
-		print(X_train)
 
 		print('Linear Regressor')
 		model = LinearRegression()
