@@ -90,14 +90,14 @@ def predict():
     
     try:
         data = request.get_json()
-        user_input = data["inputs"]
+        df = pd.DataFrame(data["data"])
 
         # Handle single sample (list of values) vs batch (list of lists)
-        if user_input and isinstance(user_input[0], (int, float, str)):
-            user_input = [user_input]
+        # if user_input and isinstance(user_input[0], (int, float, str)):
+        #     user_input = [user_input]
 
         # Convert input to DataFrame
-        df = pd.DataFrame(user_input, columns=INPUT_COLS)
+        # df = pd.DataFrame(user_input, columns=INPUT_COLS)
         
         # Ensure datetime column is actually datetime (required by pickupDataTransformer)
         df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])

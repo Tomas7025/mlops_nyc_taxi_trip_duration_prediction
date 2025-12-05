@@ -71,8 +71,20 @@ def test_prediction_single_sample():
     
     # Make prediction
     payload = {
-        "inputs": [2,"2013-01-01 00:39:00",3,3.86,238,116]
+        "data": [
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:39:00",
+            "passenger_count": 3,
+            "trip_distance": 3.86,
+            "PULocationID": 238,
+            "DOLocationID": 116
+            }
+        ]
     }
+    # payload = {
+    #     "inputs": [2,"2013-01-01 00:39:00",3,3.86,238,116]
+    # }
     
     response = requests.post(
         f"{FLASK_BASE_URL}/predict",
@@ -97,12 +109,41 @@ def test_prediction_multiple_samples():
         requests.get(f"{FLASK_BASE_URL}/reload")
         time.sleep(2)
     
-    # Make prediction with 3 samples (one from each iris class typically)
+    # # Make prediction with 3 samples (one from each iris class typically)
+    # payload = {
+    #     "inputs": [
+    #         [2,"2013-01-01 00:39:00",3,3.86,238,116],
+    #         [2,"2013-01-01 00:12:00",5,0.0,264,264,], 
+    #         [2,"2013-01-01 00:02:00",3,0.0,264,264]
+    #     ]
+    # }
+
     payload = {
-        "inputs": [
-            [2,"2013-01-01 00:39:00",3,3.86,238,116],
-            [2,"2013-01-01 00:12:00",5,0.0,264,264,], 
-            [2,"2013-01-01 00:02:00",3,0.0,264,264]
+        "data": [
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:39:00",
+            "passenger_count": 3,
+            "trip_distance": 3.86,
+            "PULocationID": 238,
+            "DOLocationID": 116
+            },
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:12:00",
+            "passenger_count": 5,
+            "trip_distance": 0.0,
+            "PULocationID": 264,
+            "DOLocationID": 264
+            },
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:02:00",
+            "passenger_count": 3,
+            "trip_distance": 0.0,
+            "PULocationID": 264,
+            "DOLocationID": 264
+            }
         ]
     }
     
@@ -198,8 +239,20 @@ def test_concurrent_predictions():
         requests.get(f"{FLASK_BASE_URL}/reload")
         time.sleep(2)
     
+    # payload = {
+    #     "inputs": [2,"2013-01-01 00:39:00",3,3.86,238,116]
+    # }
     payload = {
-        "inputs": [2,"2013-01-01 00:39:00",3,3.86,238,116]
+        "data": [
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:39:00",
+            "passenger_count": 3,
+            "trip_distance": 3.86,
+            "PULocationID": 238,
+            "DOLocationID": 116
+            }
+        ]
     }
     
     # Make multiple requests quickly
