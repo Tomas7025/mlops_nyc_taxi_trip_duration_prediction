@@ -24,7 +24,7 @@ jobs:
     # Run only if previous stage finished successfully
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, training]
 
     steps:
       - uses: actions/checkout@v4
@@ -65,6 +65,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/data:/app/data \
+            -v /opt/mlflow/artifacts:/opt/mlflow/artifacts \
             -e MLFLOW_TRACKING_URI \
             -e MLFLOW_MODEL_NAME \
             -e MLFLOW_EXPERIMENT_NAME \
@@ -74,6 +75,8 @@ jobs:
       # Download serving image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
 
+      - name: Clean previous container if exists
+        run: docker rm -f serving-app || true
 
       # Start serving image
       # It is configured to load the model passed in env variable MLFLOW_MODEL_NAME and alias MODEL_ALIAS
@@ -85,6 +88,7 @@ jobs:
         run: |
           docker run -d \
             -v ${{ github.workspace }}/data:/app/data \
+            -v /opt/mlflow/artifacts:/opt/mlflow/artifacts \
             --name serving-app \
             -p 8080:8080 \
             -e MLFLOW_TRACKING_URI \
@@ -132,5 +136,3 @@ jobs:
           FROM_ALIAS: ${{ github.sha }}
           TO_ALIAS: staging
         run: uv run python src/model-promotion/promote_model.py
-
-

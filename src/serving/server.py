@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import pickle
 import numpy as np
+import pandas as pd
+import joblib
 import os
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -18,6 +20,7 @@ app = Flask(__name__)
 
 CAT_COLS = ['VendorID','RatecodeID','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
+INPUT_COLS = ['VendorID', 'RatecodeID', 'tpep_pickup_datetime', 'passenger_count', 'trip_distance', 'store_and_fwd_flag', 'PULocationID', 'DOLocationID', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount']
 
 MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
 if not MODEL_NAME:
@@ -25,15 +28,25 @@ if not MODEL_NAME:
 
 MODEL_ALIAS = os.getenv("MODEL_ALIAS")
 
-# Try to load model once on startup
+# Try to load model and pipeline once on startup
 try:
     app.config["MODEL"] = mlflow.sklearn.load_model(
         model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
     )
-    print("Model loaded successfully at startup.")
+    
+    # Get run_id to load pipeline artifact
+    client = MlflowClient()
+    alias_info = client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+    run_id = alias_info.run_id
+    
+    local_path = mlflow.artifacts.download_artifacts(run_id=run_id, artifact_path="preprocessing/pipeline.pkl")
+    app.config["PIPELINE"] = joblib.load(local_path)
+    
+    print("Model and pipeline loaded successfully at startup.")
 except Exception as e:
     app.config["MODEL"] = None
-    print(f"Could not load model at startup: {e}")
+    app.config["PIPELINE"] = None
+    print(f"Could not load model/pipeline at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
 
 # #not being used rn
@@ -70,26 +83,35 @@ def health():
 def predict():
     """Make predictions using the model stored in app config."""
     model = app.config["MODEL"]
-    if model is None:
-        return jsonify(error="Model not loaded. Please call /reload first."), 503
+    pipeline = app.config.get("PIPELINE")
+
+    if model is None or pipeline is None:
+        return jsonify(error="Model or pipeline not loaded. Please call /reload first."), 503
     
     try:
         data = request.get_json()
-
         user_input = data["inputs"]
 
-        X = np.array(user_input)
-        baseline_pipeline = Pipeline(steps=[('dropper',columnDropperTransformer(['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])),
-									('data_transformer',pickupDataTransformer()),
-									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
-									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
+        # Handle single sample (list of values) vs batch (list of lists)
+        if user_input and isinstance(user_input[0], (int, float, str)):
+            user_input = [user_input]
 
-        baseline_pipeline.fit(X) #???? não faz sentido temos de ir buscar a pipeline ao MLFlow e usar essa, mas ya deixo assim por agora
-        X = baseline_pipeline.transform(X)
+        # Convert input to DataFrame
+        df = pd.DataFrame(user_input, columns=INPUT_COLS)
+        
+        # Ensure datetime column is actually datetime (required by pickupDataTransformer)
+        df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
 
-        #if the user sends only one sample
-        if X.ndim == 1:
-            X = X.reshape(1, -1)
+        # Add missing columns required by pipeline (to be dropped)
+        df['tpep_dropoff_datetime'] = pd.Timestamp.now() # Dummy
+
+        # df.drop(['store_and_fwd_flag','congestion_surcharge','airport_fee'],axis=1)
+
+        df['congestion_surcharge'] = 0.0
+        df['airport_fee'] = 0.0
+        
+        # Transform
+        X = pipeline.transform(df)
 
         predictions = model.predict(X).tolist()
 
@@ -98,17 +120,28 @@ def predict():
         })
 
     except Exception as e:
+        print(f"Error during prediction: {e}", flush=True)
         return jsonify({"error": str(e)}), 400
 
 @app.route("/reload", methods=["GET"])
 def reload_model():
     """Reload model from MLflow and store in Flask app config."""
     try:
+        # Reload model
         model = mlflow.sklearn.load_model(model_uri=f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
         app.config["MODEL"] = model
-        return jsonify(message="Model reloaded successfully.")
+        
+        # Reload pipeline
+        client = MlflowClient()
+        alias_info = client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        run_id = alias_info.run_id
+        
+        local_path = mlflow.artifacts.download_artifacts(run_id=run_id, artifact_path="preprocessing/pipeline.pkl")
+        app.config["PIPELINE"] = joblib.load(local_path)
+        
+        return jsonify(message="Model and pipeline reloaded successfully.")
     except Exception as e:
-        return jsonify(error=f"Failed to load model: {e}"), 500
+        return jsonify(error=f"Failed to load model/pipeline: {e}"), 500
 
 
 def main():
