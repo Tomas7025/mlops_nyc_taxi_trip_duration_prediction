@@ -104,8 +104,11 @@ def predict():
 
         # Add missing columns required by pipeline (to be dropped)
         df['tpep_dropoff_datetime'] = pd.Timestamp.now() # Dummy
-        df['congestion_surcharge'] = 0.0
-        df['airport_fee'] = 0.0
+
+        df.drop(['store_and_fwd_flag','congestion_surcharge','airport_fee'],axis=1)
+
+        # df['congestion_surcharge'] = 0.0
+        # df['airport_fee'] = 0.0
         
         # Transform
         X = pipeline.transform(df)
