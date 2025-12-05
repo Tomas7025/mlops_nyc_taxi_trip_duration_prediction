@@ -102,6 +102,12 @@ def predict():
         # Ensure datetime column is actually datetime (required by pickupDataTransformer)
         df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
  
+        df['pickup_hour'] = df['tpep_pickup_datetime'].dt.hour
+        df['pickup_day_of_week'] = df['tpep_pickup_datetime'].dt.dayofweek
+        df['pickup_month'] = df['tpep_pickup_datetime'].dt.month
+        df['pickup_day'] = df['tpep_pickup_datetime'].dt.day
+        df.drop(['tpep_pickup_datetime'],axis=1,inplace=True)
+
         # Transform
         X = pipeline.transform(df)
 

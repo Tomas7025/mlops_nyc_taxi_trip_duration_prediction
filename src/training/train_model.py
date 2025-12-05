@@ -31,7 +31,13 @@ def preprocess_data(data):
 	data['RatecodeID'] = pd.to_numeric(data['RatecodeID'], downcast='integer')
 	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
 
-	data.drop(['tpep_dropoff_datetime', 'RatecodeID', 'store_and_fwd_flag', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount','congestion_surcharge','airport_fee'],axis=1)
+	data = data.drop(['tpep_dropoff_datetime', 'RatecodeID', 'store_and_fwd_flag', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount','congestion_surcharge','airport_fee'],axis=1)
+
+	data['pickup_hour'] = data['tpep_pickup_datetime'].dt.hour
+	data['pickup_day_of_week'] = data['tpep_pickup_datetime'].dt.dayofweek
+	data['pickup_month'] = data['tpep_pickup_datetime'].dt.month
+	data['pickup_day'] = data['tpep_pickup_datetime'].dt.day
+	data.drop(['tpep_pickup_datetime'],axis=1,inplace=True)
 
 	return data
 
@@ -163,8 +169,7 @@ def train_model():
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('data_transformer',pickupDataTransformer()),
-									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
+		baseline_pipeline = Pipeline(steps=[('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
 									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
 		
 		# === Data split ===
