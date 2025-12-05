@@ -79,9 +79,9 @@ def test_prediction_single_sample():
         json=payload,
         headers={"Content-Type": "application/json"}
     )
-    
-    assert response.status_code == 200
     data = response.json()
+    print(data)
+    assert response.status_code == 200
     assert 'predictions' in data
     assert len(data['predictions']) == 1
     assert data['predictions'][0] > 0
