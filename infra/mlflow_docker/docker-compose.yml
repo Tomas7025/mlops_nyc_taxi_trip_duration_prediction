@@ -16,7 +16,8 @@ services:
       - /opt/mlflow/artifacts:/opt/mlflow/artifacts
     command: >
       mlflow server
+      --serve-artifacts
       --backend-store-uri sqlite:////mlflow.db
-      --default-artifact-root /opt/mlflow/artifacts
+      --artifacts-destination /opt/mlflow/artifacts
       --host 0.0.0.0
       --port 5000
