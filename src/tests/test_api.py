@@ -3,6 +3,7 @@ import pytest
 import json
 from unittest.mock import Mock, patch
 import numpy as np
+import pandas as pd
 from src.serving.server import app
 
 
@@ -18,13 +19,28 @@ def client():
 def mock_model():
     """Create a mock model for testing."""
     model = Mock()
-    model.predict = Mock(return_value=np.array([0, 1, 2]))
+    model.predict = Mock(return_value=np.array([16, 4, 1]))
     return model
 
+@pytest.fixture
+def mock_pipeline():
+    """Create a mock pipeline for testing"""
+    pipeline = Mock()
+    pipeline.transform = Mock(return_value=pd.DataFrame({
+        'VendorID': [2, 2, 2],
+        'passenger_count': [3, 5, 3],
+        'trip_distance': [3.86,0,0],
+        'PULocationID': [238,264,264],
+        'DOLocationID': [116,264,264],
+        'pickup_hour': [0,0,0],
+        'pickup_day_of_week': [0,0,0],
+        'pickup_month': [1,1,1],
+        'pickup_day': [1,1,1]
+        }))
 
 def test_health_endpoint_without_model(client):
     """Test health endpoint when no model is loaded."""
-    with patch.dict(app.config, {"MODEL": None}):
+    with patch.dict(app.config, {"MODEL": None, "PIPELINE": None}):
         response = client.get('/health')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -32,9 +48,9 @@ def test_health_endpoint_without_model(client):
         assert data['model_loaded'] is False
 
 
-def test_health_endpoint_with_model(client, mock_model):
+def test_health_endpoint_with_model(client, mock_model, pipeline_model):
     """Test health endpoint when model is loaded."""
-    with patch.dict(app.config, {"MODEL": mock_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
         response = client.get('/health')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -44,7 +60,7 @@ def test_health_endpoint_with_model(client, mock_model):
 
 def test_predict_without_model(client):
     """Test predict endpoint when no model is loaded."""
-    with patch.dict(app.config, {"MODEL": None}):
+    with patch.dict(app.config, {"MODEL": None, "PIPELINE": None}):
         response = client.post(
             '/predict',
             data=json.dumps({
@@ -67,9 +83,9 @@ def test_predict_without_model(client):
         assert 'Model or pipeline not loaded. Please call /reload first.' in data['error']
 
 
-def test_predict_with_model(client, mock_model):
+def test_predict_with_model(client, mock_model, pipeline_model):
     """Test predict endpoint with a loaded model."""
-    with patch.dict(app.config, {"MODEL": mock_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
         response = client.post(
             '/predict',
             data=json.dumps({
@@ -107,16 +123,12 @@ def test_predict_with_model(client, mock_model):
         assert 'predictions' in data
         assert len(data['predictions']) == 3
 
-        #assert data['predictions'] == [0, 1, 2]
-        # TEMPORARY: Não sei se é o correto
-        for pred in data['predictions']:
-            assert pred > 0
+        assert data['predictions'] == [16, 4, 1]
 
 
-
-def test_predict_invalid_data(client, mock_model):
+def test_predict_invalid_data(client, mock_model, pipeline_model):
     """Test predict endpoint with invalid data format."""
-    with patch.dict(app.config, {"MODEL": mock_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
         response = client.post(
             '/predict',
             data=json.dumps({'invalid': 'data'}),
@@ -151,9 +163,9 @@ def test_reload_model_failure(client):
         assert 'Failed to load model/pipeline:' in data['error']
 
 
-def test_predict_correct_dataframe_creation(client, mock_model):
+def test_predict_correct_dataframe_creation(client, mock_model, pipeline_model):
     """Test that predict correctly creates DataFrame from request."""
-    with patch.dict(app.config, {"MODEL": mock_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
         test_data = [
             {
             "VendorID": 2,
