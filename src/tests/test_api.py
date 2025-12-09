@@ -3,7 +3,7 @@ import pytest
 import json
 from unittest.mock import Mock, patch
 import numpy as np
-from serving.server import app
+from src.serving.server import app
 
 
 @pytest.fixture
