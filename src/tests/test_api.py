@@ -7,6 +7,8 @@ import pandas as pd
 from src.serving.server import app
 import os
 
+APP_PATH = 'src.serving.server'
+
 MOCK_MODEL_NAME = "test_model_env"
 MOCK_MODEL_ALIAS = "staging_env"
 
@@ -148,7 +150,7 @@ def test_reload_model_success(client):
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient, \
-        patch.dict(os.environ, 
+        patch.dict(APP_PATH, 
                     {'MODEL_NAME': MOCK_MODEL_NAME, 
                      'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
                     clear=False):
@@ -196,7 +198,7 @@ def test_reload_model_failure_on_artifact_download(client):
     with patch('mlflow.sklearn.load_model') as mock_load_model, \
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient, \
-        patch.dict(os.environ, 
+        patch.dict(APP_PATH, 
                     {'MODEL_NAME': MOCK_MODEL_NAME, 
                      'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
                     clear=False):
@@ -221,7 +223,7 @@ def test_reload_model_failure_on_joblib_load(client):
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient,\
-        patch.dict(os.environ, 
+        patch.dict(APP_PATH, 
                     {'MODEL_NAME': MOCK_MODEL_NAME, 
                      'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
                     clear=False):
