@@ -24,7 +24,8 @@ jobs:
         with: { python-version: '3.13' }
       - run: pip install uv
       - run: uv sync
-      # ??? - run: uv run pytest src/serving/test_app.py -v
+      - run: uv run pytest src/tests/test_api.py -v
+      # - run: uv run pytest stc/tests/test_train.py -v
 
   build-images:
     # Passed tests, now build docker images for training and serving
