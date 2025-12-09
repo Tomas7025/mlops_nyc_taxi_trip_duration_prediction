@@ -37,6 +37,7 @@ def mock_pipeline():
         'pickup_month': [1,1,1],
         'pickup_day': [1,1,1]
         }))
+    return pipeline
 
 def test_health_endpoint_without_model(client):
     """Test health endpoint when no model is loaded."""
@@ -48,9 +49,9 @@ def test_health_endpoint_without_model(client):
         assert data['model_loaded'] is False
 
 
-def test_health_endpoint_with_model(client, mock_model, pipeline_model):
+def test_health_endpoint_with_model(client, mock_model, mock_pipeline):
     """Test health endpoint when model is loaded."""
-    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": mock_pipeline}):
         response = client.get('/health')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -83,9 +84,9 @@ def test_predict_without_model(client):
         assert 'Model or pipeline not loaded. Please call /reload first.' in data['error']
 
 
-def test_predict_with_model(client, mock_model, pipeline_model):
+def test_predict_with_model(client, mock_model, mock_pipeline):
     """Test predict endpoint with a loaded model."""
-    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": mock_pipeline}):
         response = client.post(
             '/predict',
             data=json.dumps({
@@ -126,9 +127,9 @@ def test_predict_with_model(client, mock_model, pipeline_model):
         assert data['predictions'] == [16, 4, 1]
 
 
-def test_predict_invalid_data(client, mock_model, pipeline_model):
+def test_predict_invalid_data(client, mock_model, mock_pipeline):
     """Test predict endpoint with invalid data format."""
-    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": mock_pipeline}):
         response = client.post(
             '/predict',
             data=json.dumps({'invalid': 'data'}),
@@ -140,32 +141,95 @@ def test_predict_invalid_data(client, mock_model, pipeline_model):
 
 def test_reload_model_success(client):
     """Test reload endpoint when model loads successfully."""
-    with patch('mlflow.pyfunc.load_model') as mock_load:
+    with patch('mlflow.sklearn.load_model') as mock_model_load, \
+        patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
+        patch('joblib.load') as mock_joblib_load, \
+        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+
+        # Mock model
         mock_model = Mock()
-        mock_load.return_value = mock_model
+        mock_model_load.return_value = mock_model
+
+        mock_alias_info = Mock()
+        mock_alias_info.run_id = "test_run_mock"
+
+        mock_client_instance = MockMlflowClient.return_value
+        mock_client_instance.get_model_version_by_alias.return_value = mock_alias_info
+
+        mock_download_artifacts.return_value = "/tmp/mock_pipeline.pkl"
+
+        mock_pipeline = Mock()
+        mock_joblib_load.return_value = mock_pipeline
         
         response = client.get('/reload')
+
         assert response.status_code == 200
         data = json.loads(response.data)
         assert 'message' in data
         assert 'Model and pipeline reloaded successfully.' in data['message']
 
+        mock_model_load.assert_called_once()
+        mock_client_instance.get_model_version_by_alias.assert_called_once()
+        mock_download_artifacts.assert_called_once()
+        mock_joblib_load.assert_called_once_with("/tmp/mock_pipeline.pkl")
 
-def test_reload_model_failure(client):
-    """Test reload endpoint when model fails to load."""
-    with patch('mlflow.pyfunc.load_model') as mock_load:
-        mock_load.side_effect = Exception("MLflow error")
+def test_reload_model_failure_on_model_load(client):
+    """Test reload endpoint when  model fails to load."""
+    with patch('mlflow.sklearn.load_model') as mock_load:
+        mock_load.side_effect = Exception("Model Load error")
         
         response = client.get('/reload')
         assert response.status_code == 500
         data = json.loads(response.data)
         assert 'error' in data
-        assert 'Failed to load model/pipeline:' in data['error']
+        assert 'Failed to load model/pipeline: Model Load error' in data['error']
 
+def test_reload_model_failure_on_artifact_download(client):
+    """Test reload endpoint when an artifact fails to load."""
+    with patch('mlflow.sklearn.load_model') as mock_load_model, \
+        patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
+        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+        
+        mock_load_model.return_value = Mock()
 
-def test_predict_correct_dataframe_creation(client, mock_model, pipeline_model):
+        mock_alias_info = Mock()
+        mock_alias_info.run_id = "test_run_mock"
+        MockMlflowClient.return_value.get_model_version_by_alias.return_value = mock_alias_info
+
+        mock_download_artifacts.side_effect = Exception("Artifact download error")
+
+        response = client.get('/reload')
+        assert response.status_code == 500
+        data = json.loads(response.data)
+        assert 'error' in data
+        assert 'Failed to load model/pipeline: Artifact download error' in data['error']
+
+def test_reload_model_failure_on_joblib_load(client):
+    """Test reload endpoint when joblib fails to load."""
+    with patch('mlflow.sklearn.load_model') as mock_load_model, \
+        patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
+        patch('joblib.load') as mock_joblib_load, \
+        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+        
+        mock_load_model.return_value = Mock()
+
+        mock_alias_info = Mock()
+        mock_alias_info.run_id = "test_run_mock"
+        MockMlflowClient.return_value.get_model_version_by_alias.return_value = mock_alias_info
+
+        mock_download_artifacts.side_effect = "/tmp/mock_pipeline.pkl"
+
+        mock_joblib_load.side_effect = Exception("Pipeline Load error")
+
+        response = client.get('/reload')
+        assert response.status_code == 500
+        data = json.loads(response.data)
+        assert 'error' in data
+        assert 'Failed to load model/pipeline: Pipeline Load error' in data['error']
+
+def test_predict_correct_dataframe_creation(client, mock_model, mock_pipeline):
     """Test that predict correctly creates DataFrame from request."""
-    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": pipeline_model}):
+    with patch.dict(app.config, {"MODEL": mock_model, "PIPELINE": mock_pipeline}):
         test_data = [
             {
             "VendorID": 2,
