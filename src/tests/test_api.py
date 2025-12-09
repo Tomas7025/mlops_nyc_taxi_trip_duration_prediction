@@ -144,7 +144,7 @@ def test_reload_model_success(client):
     with patch('mlflow.sklearn.load_model') as mock_model_load, \
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
-        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+        patch('mlflow.tracking.MlflowClient') as MockMlflowClient:
 
         # Mock model
         mock_model = Mock()
@@ -188,7 +188,7 @@ def test_reload_model_failure_on_artifact_download(client):
     """Test reload endpoint when an artifact fails to load."""
     with patch('mlflow.sklearn.load_model') as mock_load_model, \
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
-        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+        patch('mlflow.tracking.MlflowClient') as MockMlflowClient:
         
         mock_load_model.return_value = Mock()
 
@@ -209,7 +209,7 @@ def test_reload_model_failure_on_joblib_load(client):
     with patch('mlflow.sklearn.load_model') as mock_load_model, \
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
-        patch('mlflow.tracking.mlflow_client.MlflowClient') as MockMlflowClient:
+        patch('mlflow.tracking.MlflowClient') as MockMlflowClient:
         
         mock_load_model.return_value = Mock()
 
