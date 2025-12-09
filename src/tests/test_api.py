@@ -150,10 +150,8 @@ def test_reload_model_success(client):
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient, \
-        patch.dict(APP_PATH, 
-                    {'MODEL_NAME': MOCK_MODEL_NAME, 
-                     'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
-                    clear=False):
+        patch(f'{APP_PATH}.MODEL_NAME', new=MOCK_MODEL_NAME), \
+        patch(f'{APP_PATH}.MODEL_ALIAS', new=MOCK_MODEL_ALIAS):
 
         # Mock model
         mock_model = Mock()
@@ -198,10 +196,8 @@ def test_reload_model_failure_on_artifact_download(client):
     with patch('mlflow.sklearn.load_model') as mock_load_model, \
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient, \
-        patch.dict(APP_PATH, 
-                    {'MODEL_NAME': MOCK_MODEL_NAME, 
-                     'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
-                    clear=False):
+        patch(f'{APP_PATH}.MODEL_NAME', new=MOCK_MODEL_NAME), \
+        patch(f'{APP_PATH}.MODEL_ALIAS', new=MOCK_MODEL_ALIAS):
         
         mock_load_model.return_value = Mock()
 
@@ -223,10 +219,8 @@ def test_reload_model_failure_on_joblib_load(client):
         patch('mlflow.artifacts.download_artifacts') as mock_download_artifacts, \
         patch('joblib.load') as mock_joblib_load, \
         patch('mlflow.tracking.MlflowClient') as MockMlflowClient,\
-        patch.dict(APP_PATH, 
-                    {'MODEL_NAME': MOCK_MODEL_NAME, 
-                     'MODEL_ALIAS': MOCK_MODEL_ALIAS}, 
-                    clear=False):
+        patch(f'{APP_PATH}.MODEL_NAME', new=MOCK_MODEL_NAME), \
+        patch(f'{APP_PATH}.MODEL_ALIAS', new=MOCK_MODEL_ALIAS):
         
         mock_load_model.return_value = Mock()
 
