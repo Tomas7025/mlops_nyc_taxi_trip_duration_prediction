@@ -43,7 +43,14 @@ PREDICTION_DISTRIBUTION = Histogram(
     'model_prediction_duration_minutes',
     'Distribution of predicted trip duration',
     # Buckets ajustados para minutos (viagens curtas e longas)
-    buckets=[0, 2, 5, 10, 15, 20, 30, 45, 60, 90, 120]
+    buckets=[0, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30, 45, 60, 90, 120]
+)
+
+# Monitorizar a Hora do Pedido (Temporal Drift)
+INPUT_PICKUP_HOUR = Histogram(
+    'model_input_pickup_hour',
+    'Distribution of pickup hours (0-23)',
+    buckets=[0, 4, 8, 12, 16, 20, 24] # Buckets de 4 em 4 horas (Madrugada, Manhã, Tarde, Noite)
 )
 
 PREDICTION_COUNTER = Counter('model_predictions_total', 'Total number of predictions', ['vendor_id'])
@@ -175,6 +182,11 @@ def predict():
             # Ensure datetime column is actually datetime (required by pickupDataTransformer)
             df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
     
+            # Log pickup hour for temporal drift monitoring
+            hours = df['tpep_pickup_datetime'].dt.hour
+            for hr in hours:
+                INPUT_PICKUP_HOUR.observe(float(hr))
+
             df['pickup_hour'] = df['tpep_pickup_datetime'].dt.hour
             df['pickup_day_of_week'] = df['tpep_pickup_datetime'].dt.dayofweek
             df['pickup_month'] = df['tpep_pickup_datetime'].dt.month
