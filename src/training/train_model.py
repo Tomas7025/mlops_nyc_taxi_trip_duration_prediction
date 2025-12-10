@@ -20,7 +20,7 @@ import pickle
 # mlflow.set_experiment("nyc_taxi_project")
 
 CAT_COLS = ['VendorID']
-NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID']
+NUM_COLS = ['passenger_count','trip_distance']#,'PULocationID','DOLocationID']
 
 def preprocess_data(data):
 	# data = data.head(1000000) # ! <- limitado a 1000000
@@ -81,11 +81,11 @@ def main():
 	if not COMMIT_SHA:
 		raise EnvironmentError("Missing required env var: COMMIT_SHA")
 
-	MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
+	MODEL_NAME = "best_model"#os.getenv('MLFLOW_MODEL_NAME')
 	if not MODEL_NAME:
 		raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
 
-	EXP_NAME = os.getenv('MLFLOW_EXPERIMENT_NAME')
+	EXP_NAME = "test_best_model"#os.getenv('MLFLOW_EXPERIMENT_NAME')
 	if not EXP_NAME:
 		raise EnvironmentError("Missing required env var: MLFLOW_EXPERIMENT_NAME")
 	
@@ -136,22 +136,34 @@ def main():
 		# X_train = X_train[top_features]
 		# X_test = X_test[top_features]
 
-		print('Linear Regressor')
-		model = LinearRegression()
-		model.fit(X_train,y_train)
+		best_error = 0
+		best_run_id = None
+		best_model = None
+		models = [LinearRegression(), RandomForestRegressor(n_estimators=50, random_state=42), HistGradientBoostingRegressor(random_state=42)]
+		for model in models:
 
-		joblib.dump(baseline_pipeline, "pipeline.pkl")
-		mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
-		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
+			print('Linear Regressor')
+			model = LinearRegression()
+			model.fit(X_train,y_train)
 
-		y_pred = model.predict(X_test)
+			joblib.dump(baseline_pipeline, "pipeline.pkl")
+			mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
+			signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
+			mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
-		calculate_metrics(y_test, y_pred)
+			y_pred = model.predict(X_test)
 
-		model_uri = f"runs:/{run.info.run_id}/{MODEL_NAME}"
+			metrics = calculate_metrics(y_test, y_pred)
+			if best_error == 0 or metrics['MSE'] < best_error:
+				best_error = metrics['MSE']
+				best_run_id = run.info.run_id
+				best_model = model.__class__.__name__ 
+
+		print(f"\nBest model run_id: {best_run_id} with MSE: {best_error}")
+		print("Best model name:" + str(best_model))
+		model_uri = f"runs:/{best_run_id}/{MODEL_NAME}"
 		print(f"\nmodel_uri: {model_uri}")
-
+			
 
 	try:
 		registered_model = mlflow.register_model(model_uri, MODEL_NAME)
