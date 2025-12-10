@@ -72,6 +72,13 @@ jobs:
             -e COMMIT_SHA \
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/training:${{ github.sha }}
 
+      - name: Validate Model Quality
+        env:
+          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
+          MODEL_ALIAS: ${{ github.sha }}
+        run: uv run python src/model-validation/validate_model_quality.py
+          
       # Download serving image built in the previous stage
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:${{ github.sha }}
 
