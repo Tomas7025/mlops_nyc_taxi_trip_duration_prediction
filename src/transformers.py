@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import OneHotEncoder,StandardScaler
 
 class pickupDataTransformer():
@@ -30,7 +31,7 @@ class columnDropperTransformer():
 		return self
 		
 
-class oneHotEncodingTransformer():
+class oneHotEncodingTransformer(BaseEstimator,TransformerMixin):
 	def __init__(self,columns):
 		self.encoder = OneHotEncoder(sparse_output=False)
 		self.columns = columns
@@ -52,7 +53,7 @@ class oneHotEncodingTransformer():
 		self.encoder.fit(X[self.columns])
 		return self
 		
-class standarScalingTransformer():
+class standarScalingTransformer(BaseEstimator,TransformerMixin):
 	def __init__(self,columns):
 		self.scaler = StandardScaler()
 		self.columns = columns

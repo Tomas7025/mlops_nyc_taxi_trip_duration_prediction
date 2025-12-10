@@ -5,11 +5,13 @@ import joblib
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error, mean_squared_error,r2_score, mean_absolute_error
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder,StandardScaler
 
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 
-from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
+# from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 import pickle
 # Se estiveres dentro da VM:
@@ -20,7 +22,7 @@ import pickle
 # mlflow.set_experiment("nyc_taxi_project")
 
 CAT_COLS = ['VendorID']
-NUM_COLS = ['passenger_count','trip_distance']#,'PULocationID','DOLocationID']
+NUM_COLS = ['passenger_count','trip_distance']
 
 def preprocess_data(data):
 	# data = data.head(1000000) # ! <- limitado a 1000000
@@ -107,8 +109,15 @@ def main():
 		# data = preprocess_data(data)
 			
 		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
-									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
+		preprocessor = ColumnTransformer(
+			transformers=[
+				# (name, transformer_object, columns_to_apply_to)
+				('scaler', StandardScaler(), NUM_COLS),
+				('onehot', OneHotEncoder(sparse_output=False), CAT_COLS)
+			],
+			remainder='passthrough' # Keep all other columns un-transformed
+		)
+		baseline_pipeline = Pipeline(steps=[('pre_processor',preprocessor)])
 		
 		# === Data split ===
 		y = data['duration']
