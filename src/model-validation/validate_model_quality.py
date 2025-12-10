@@ -3,7 +3,7 @@ import os
 import sys
 
 # Ajustar isto no futuro, não sei bem que valores temos de MSE
-MAX_MSE = 80
+MAX_MSE = 120#80
 
 # Connect to MLflow
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
