@@ -14,6 +14,9 @@ from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegresso
 # from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
 import pickle
+from sklearn import set_config
+set_config(transform_output="pandas")
+
 # Se estiveres dentro da VM:
 # mlflow.set_tracking_uri("http://10.17.0.162:5000")
 
@@ -106,7 +109,7 @@ def main():
 		# === Read dataset ===
 		# data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
 		data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
-		# data = preprocess_data(data)
+		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
 		preprocessor = ColumnTransformer(
