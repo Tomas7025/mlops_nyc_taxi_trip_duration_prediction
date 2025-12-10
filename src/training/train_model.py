@@ -151,7 +151,7 @@ def main():
 		best_error = 0
 		best_run_id = None
 		best_model = None
-		models = [LinearRegression(), RandomForestRegressor(n_estimators=50, random_state=42), HistGradientBoostingRegressor(random_state=42)]
+		models = [LinearRegression(), RandomForestRegressor(n_estimators=10, random_state=42), HistGradientBoostingRegressor(random_state=42)]
 		for model in models:
 			print("Training with: " + str(model.__class__.__name__))
 			model.fit(X_train,y_train)
