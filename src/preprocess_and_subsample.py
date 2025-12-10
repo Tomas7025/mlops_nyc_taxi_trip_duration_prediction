@@ -64,7 +64,7 @@ def main():
 
 			data = (
 				data.groupby(['pickup_month', 'pickup_day', 'pickup_hour'], group_keys=False)
-				.apply(lambda g: g.sample(frac=0.05))
+				.apply(lambda g: g.sample(frac=0.025))
 				.reset_index(drop=True)
 			)
 
@@ -84,7 +84,7 @@ def main():
 	return
 
 if __name__ == '__main__':
-	# main()
+	main()
 	parquet_files = [f for f in os.listdir('data/preprocessed') if f.endswith('.parquet')]
 	# join all files into a single dataframe and save as a single parquet file
 	df_list = [pd.read_parquet(os.path.join('data/preprocessed', f)) for f in parquet_files]
