@@ -79,7 +79,7 @@ def calculate_metrics(y_test, y_pred):
 def main():
 	# Get env vars that come from github actions 
 	import os
-	COMMIT_SHA = os.getenv('COMMIT_SHA')
+	COMMIT_SHA = "test_sha"#os.getenv('COMMIT_SHA')
 	if not COMMIT_SHA:
 		raise EnvironmentError("Missing required env var: COMMIT_SHA")
 
