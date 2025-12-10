@@ -14,8 +14,7 @@ from sklearn.pipeline import Pipeline
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
 # Configure MLflow tracking URI and authentication
-mlflow.set_tracking_uri("http://10.17.0.162:5000")
-# mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI","http://10.17.0.162:5000"))
 app = Flask(__name__)
 
 CAT_COLS = ['VendorID','RatecodeID','payment_type']

@@ -75,68 +75,6 @@ def calculate_metrics(y_test, y_pred):
 	}
 
 def main():
-	with mlflow.start_run() as run:
-		# === Read dataset ===
-		data = pd.read_parquet('data\\raw\\yellow_tripdata_2011-01.parquet')
-		data = preprocess_data(data)
-			
-		# === Pipeline definition ===
-		baseline_pipeline = Pipeline(steps=[('data_transformer',pickupDataTransformer()),
-									('one_hot_encoding',oneHotEncodingTransformer(CAT_COLS)),
-									('numerical_scaling',standarScalingTransformer(NUM_COLS))])
-		
-		# === Data split ===
-		y = data['duration']
-		X = data.drop(['duration'],axis=1)	
-		X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-		# 
-		# X_train, y_train = missingDataTransformer().transform(X_train,y_train)
-		# print(X_train.index.equals(y_train.index))
-		# X_test, y_test = missingDataTransformer().transform(X_test,y_test)
-
-		baseline_pipeline.fit(X_train)
-		X_train = baseline_pipeline.transform(X_train)
-		X_test = baseline_pipeline.transform(X_test)
-
-		# === Compute correlations ===
-		# data_train = X_train.copy()
-		# data_train['duration'] = y_train.values
-		# print(y_train.head(100))
-		# print(X_train.head(100))
-		# print(data_train.head(100))
-		# corr = data_train.corr()['duration'].dropna().sort_values(key=abs, ascending=False)
-		# print("\n📊 Feature correlations with target:")
-		# print(corr.head(20))
-
-		# # === Select top correlated features ===
-		# top_features = corr.index[1:5+1].tolist()  # skip target itself
-		# X_train = X_train[top_features]
-		# X_test = X_test[top_features]
-
-		# print(X_train)
-
-			
-		print('Linear Regressor')
-
-		model = LinearRegression()
-
-		model.fit(X_train,y_train)
-
-		signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		mlflow.sklearn.log_model(model, name="model", signature=signature, input_example=X_train[:5])
-
-		y_pred = model.predict(X_test)
-
-		calculate_metrics(y_test, y_pred)
-
-		model_uri = f"runs:/{run.info.run_id}/model"
-		print(f"\nmodel_uri: {model_uri}")
-		registered_model = mlflow.register_model(model_uri, "model")
-
-		# save_model(model)
-
-def train_model():
 	# Get env vars that come from github actions 
 	import os
 	COMMIT_SHA = os.getenv('COMMIT_SHA')
@@ -154,7 +92,7 @@ def train_model():
 	# === mlflow init configs
 	
 	# Configure MLflow to use local server
-	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+	mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://10.17.0.167:5000")
 	# mlflow.set_tracking_uri(mlflow_uri) 
 	# mlflow_uri="10.17.0.162:5000"
 	mlflow.set_tracking_uri(mlflow_uri)
@@ -247,5 +185,4 @@ def train_model():
 
 
 if __name__ == '__main__':
-	# main()
-	train_model()
+	main()
