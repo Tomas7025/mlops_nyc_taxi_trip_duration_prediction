@@ -150,9 +150,7 @@ def main():
 		best_model = None
 		models = [LinearRegression(), RandomForestRegressor(n_estimators=50, random_state=42), HistGradientBoostingRegressor(random_state=42)]
 		for model in models:
-
-			print('Linear Regressor')
-			model = LinearRegression()
+			print("Training with: " + str(models.__class__.__name__))
 			model.fit(X_train,y_train)
 
 			joblib.dump(baseline_pipeline, "pipeline.pkl")
