@@ -1,0 +1,39 @@
+# filepath: infra/local_test_monitoring/docker-compose.yml
+
+services:
+
+  serving-app:
+    build:
+      context: ../../
+      dockerfile: src/serving/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - MLFLOW_TRACKING_URI=http://10.17.0.162:5000 # Aponta para a VM (se tiveres VPN) ou deixa falhar o load do modelo, o /metrics funciona na mesma
+      - MLFLOW_MODEL_NAME=modelo_test
+      - MODEL_ALIAS=staging
+    networks:
+      - monitoring-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-net
+
+
+
+networks:
+  monitoring-net:
