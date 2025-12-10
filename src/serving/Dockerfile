@@ -15,15 +15,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
+# Copy requirements file
+COPY src/serving/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+   pip install -r requirements.txt
+
 # Copy application code
 COPY src/serving .
 
 # ---- Copy the transformers.py file and __init__.py ----
 COPY src/transformers.py .
 
-# Install Python dependencies
-RUN pip install --upgrade pip && \
-   pip install -r requirements.txt
+
 
 # # Expose Flask port
 # EXPOSE 5000
