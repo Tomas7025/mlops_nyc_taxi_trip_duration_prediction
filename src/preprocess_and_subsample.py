@@ -31,7 +31,7 @@ def preprocess(data):
 
 	data['duration'] = (data['tpep_dropoff_datetime'] - data['tpep_pickup_datetime']).dt.total_seconds() / 60
 
-	data = drop_columns(data,['store_and_fwd_flag','tpep_dropoff_datetime','congestion_surcharge','airport_fee'])
+	data = data.drop(['tpep_dropoff_datetime', 'RatecodeID', 'store_and_fwd_flag', 'payment_type', 'fare_amount', 'extra', 'mta_tax', 'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount','congestion_surcharge','airport_fee'],axis=1)
 	print('---Columns Dropped')
 
 	data['pickup_hour'] = data['tpep_pickup_datetime'].dt.hour
