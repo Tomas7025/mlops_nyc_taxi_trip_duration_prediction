@@ -22,7 +22,7 @@ import pickle
 # mlflow.set_experiment("nyc_taxi_project")
 
 CAT_COLS = ['VendorID']
-NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID']
+NUM_COLS = ['passenger_count','trip_distance']
 
 def preprocess_data(data):
 	# data = data.head(1000000) # ! <- limitado a 1000000
