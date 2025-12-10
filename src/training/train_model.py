@@ -82,15 +82,15 @@ def calculate_metrics(y_test, y_pred):
 def main():
 	# Get env vars that come from github actions 
 	import os
-	COMMIT_SHA = "test_sha"#os.getenv('COMMIT_SHA')
+	COMMIT_SHA = os.getenv('COMMIT_SHA',"test_sha")
 	if not COMMIT_SHA:
 		raise EnvironmentError("Missing required env var: COMMIT_SHA")
 
-	MODEL_NAME = "best_model"#os.getenv('MLFLOW_MODEL_NAME')
+	MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME',"best_model")
 	if not MODEL_NAME:
 		raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
 
-	EXP_NAME = "test_best_model"#os.getenv('MLFLOW_EXPERIMENT_NAME')
+	EXP_NAME = os.getenv('MLFLOW_EXPERIMENT_NAME',"test_best_model")
 	if not EXP_NAME:
 		raise EnvironmentError("Missing required env var: MLFLOW_EXPERIMENT_NAME")
 	
