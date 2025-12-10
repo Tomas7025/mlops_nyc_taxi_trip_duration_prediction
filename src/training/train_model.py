@@ -107,9 +107,9 @@ def main():
 
 	with mlflow.start_run() as run:
 		# === Read dataset ===
-		data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
-		#data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
-		data = preprocess_data(data)
+		#data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
+		data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
+		#data = preprocess_data(data)
 			
 		# === Pipeline definition ===
 		preprocessor = ColumnTransformer(
