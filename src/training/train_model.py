@@ -107,8 +107,13 @@ def main():
 
 	with mlflow.start_run() as run:
 		# === Read dataset ===
+<<<<<<< HEAD
 		# data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
 		data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
+=======
+		data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
+		#data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
+>>>>>>> bdd0f78565601519d41593e3960cce2d64ed43db
 		data = preprocess_data(data)
 			
 		# === Pipeline definition ===
@@ -153,7 +158,7 @@ def main():
 		best_model = None
 		models = [LinearRegression(), RandomForestRegressor(n_estimators=50, random_state=42), HistGradientBoostingRegressor(random_state=42)]
 		for model in models:
-			print("Training with: " + str(models.__class__.__name__))
+			print("Training with: " + str(model.__class__.__name__))
 			model.fit(X_train,y_train)
 
 			joblib.dump(baseline_pipeline, "pipeline.pkl")
