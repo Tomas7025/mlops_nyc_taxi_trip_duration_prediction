@@ -28,7 +28,7 @@ CAT_COLS = ['VendorID']
 NUM_COLS = ['passenger_count','trip_distance']
 
 def preprocess_data(data):
-	data = data.head(100000) # ! <- limitado a 1000000
+	data = data.head(2000000) # ! <- limitado a 1000000
 
 	data['tpep_pickup_datetime'] = pd.to_datetime(data['tpep_pickup_datetime'])
 	data['tpep_dropoff_datetime'] = pd.to_datetime(data['tpep_dropoff_datetime'])
