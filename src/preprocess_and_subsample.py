@@ -64,7 +64,7 @@ def main():
 
 			data = (
 				data.groupby(['pickup_month', 'pickup_day', 'pickup_hour'], group_keys=False)
-				.apply(lambda g: g.sample(frac=0.025))
+				.apply(lambda g: g.sample(frac=0.01))
 				.reset_index(drop=True)
 			)
 
