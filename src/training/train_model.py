@@ -202,7 +202,7 @@ def main():
 						metrics = calculate_metrics(y_test, y_pred)
 						if best_error == 0 or metrics['MSE'] < best_error:
 							best_error = metrics['MSE']
-							#best_run_id = run.info.run_id
+							best_run_id = run.info.run_id
 							best_model = model
 							best_param = {
 								"learning_rate": learning_rate,
