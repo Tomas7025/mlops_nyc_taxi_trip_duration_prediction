@@ -51,7 +51,12 @@ jobs:
       - run: docker pull ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production
       - run: docker stop serving-app || true
       - run: docker rm serving-app || true
-
+      
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13' }
+      - run: pip install uv
+      - run: uv sync
+      
       - run: pip install dvc dvc-ssh
       - run: dvc remote modify --local local_storage url ssh://vm1:/opt/dvc_storage
       - run: dvc pull -v -j 4
