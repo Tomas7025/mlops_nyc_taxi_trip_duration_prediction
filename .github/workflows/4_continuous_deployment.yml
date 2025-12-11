@@ -60,6 +60,7 @@ jobs:
         run: |
           docker run -d --name serving-app -p 9001:8080 \
             -e MLFLOW_TRACKING_URI \
+            --network mlops-network \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
           ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production

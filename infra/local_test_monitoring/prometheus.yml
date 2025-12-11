@@ -1,6 +1,11 @@
-# filepath: infra/local_test_monitoring/prometheus.yml
 global:
-  scrape_interval: 5s # Scrape a cada 5s para teste (em prod usa-se 15s ou 30s)
+  scrape_interval: 5s 
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
 
 rule_files:
   - "prometheus_rules.yml"
@@ -8,4 +13,5 @@ rule_files:
 scrape_configs:
   - job_name: 'flask_app'
     static_configs:
-      - targets: ['serving-app:8080'] # Nome do serviço no docker-compose
+      # O nome 'serving-app' tem de bater certo com o --name no Deploy Workflow
+      - targets: ['serving-app:8080']
