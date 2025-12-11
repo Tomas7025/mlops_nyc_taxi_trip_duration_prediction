@@ -14,7 +14,7 @@ except ImportError:
     SKLEARN_AVAILABLE = False
 
 # Configuration
-FLASK_URL = "http://localhost:8080/predict"
+FLASK_URL = "http://localhost:9001/predict"
 DATA_PATH = "data/raw/yellow_tripdata_2011-01.parquet"  # Changed to a reliable file
 
 def load_data(path):

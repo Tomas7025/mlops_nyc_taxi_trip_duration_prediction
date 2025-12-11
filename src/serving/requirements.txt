@@ -8,3 +8,4 @@ scikit-learn==1.7.2
 numpy==2.3.4
 pytest
 prometheus-client
+evidently==0.7.17

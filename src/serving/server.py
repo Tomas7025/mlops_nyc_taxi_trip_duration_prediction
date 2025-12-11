@@ -141,6 +141,37 @@ def health():
     """Simple health check."""
     return jsonify(status="healthy", model_loaded=app.config["MODEL"] is not None)
 
+def data_drift_check(new_df):
+    from evidently.report import Report
+    from evidently.metric_preset import DataDriftPreset
+
+    train_df = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
+
+    column_mapping = {
+        "target": None, 
+        "prediction": None,
+        
+        "numerical_features": ["passenger_count", "trip_distance"],
+        "categorical_features": ["VendorID", "pickup_hour", "pickup_day_of_week", 'pickup_month', 'pickup_day', "PULocationID", "DOLocationID"],
+    }
+
+    # Cria o relatório de comparação
+    report = Report(metrics=[DataDriftPreset()])
+    report.run(reference_data=train_df, current_data=new_df, column_mapping=column_mapping)
+
+    # Salva o JSON para análise futura
+    report.save_json('drift_report.json')
+
+    # Verifica a Regra de Decisão
+    drift_detected = report.as_dict()['metrics'][0]['result']['dataset_drift']
+
+    return drift_detected
+
+# @app.route("/report",methods=["GET"])
+# def drift_report():
+    
+#     return 
+
 @app.route("/predict", methods=["POST"])
 def predict():
     """Make predictions using the model stored in app config."""
@@ -197,6 +228,12 @@ def predict():
             X = pipeline.transform(df)
 
             predictions = model.predict(X).tolist()
+
+            # 
+            is_data_drift = data_drift_check(df)
+            if is_data_drift:
+                print("Data drift detected in the input data.")
+            # 
 
             # Log custom metrics
             for i, pred in enumerate(predictions):

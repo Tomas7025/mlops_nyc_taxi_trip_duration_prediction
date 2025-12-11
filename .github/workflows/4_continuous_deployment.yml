@@ -52,6 +52,11 @@ jobs:
       - run: docker stop serving-app || true
       - run: docker rm serving-app || true
 
+      - name: Pulling training data for analysis
+      - run: pip install dvc dvc-ssh
+      - run: dvc remote modify --local local_storage url ssh://vm1:/opt/dvc_storage
+      - run: dvc pull -v -j 4
+
       - name: Run production
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
