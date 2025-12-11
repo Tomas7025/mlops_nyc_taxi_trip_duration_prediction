@@ -13,4 +13,5 @@ dependencies = [
     "pytest>=8.0.0",
     "requests>=2.31.0",
     "evidently>=0.7.17"
+    "prometheus-client"
 ]
