@@ -143,7 +143,7 @@ def health():
 
 def data_drift_check(new_df):
     from evidently import Report
-    from evidently.metrics import DataDriftMetrics
+    from evidently.presets import DataDriftPreset
 
     train_df = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
 
@@ -157,7 +157,7 @@ def data_drift_check(new_df):
 
     # Cria o relatório de comparação
     report = Report(metrics=[
-        DataDriftMetrics()
+        DataDriftPreset()
     ])
 
     report.run(reference_data=train_df, current_data=new_df, column_mapping=column_mapping)
