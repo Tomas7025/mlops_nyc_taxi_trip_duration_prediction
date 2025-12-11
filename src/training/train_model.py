@@ -110,6 +110,7 @@ def main():
 		# === Read dataset ===
 		#data = pd.read_parquet('data/raw/yellow_tripdata_2011-01.parquet')
 		data = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
+		validation_data = pd.read_parquet('data/preprocessed/validation_subsampled_dataset.parquet')
 		#data = preprocess_data(data)
 			
 		# === Pipeline definition ===
@@ -140,14 +141,16 @@ def main():
 		baseline_pipeline = Pipeline(steps=[('pre_processor',preprocessor)])
 		
 		# === Data split ===
-		y = data['duration']
-		X = data.drop(['duration'],axis=1)	
-		X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+		y_train = data['duration']
+		X_train = data.drop(['duration'],axis=1)	
+		y_test = validation_data['duration']
+		X_test = validation_data.drop(['duration'],axis=1)	
+		#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 		baseline_pipeline.fit(X_train)
 		X_train = baseline_pipeline.transform(X_train)
 		X_test = baseline_pipeline.transform(X_test)
-
+		
 		# Comentei por agora para testar com tudo
 		#
 		# # === Compute correlations ===
