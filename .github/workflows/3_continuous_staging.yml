@@ -45,7 +45,13 @@ jobs:
       - name: Clean previous container if exists
         run: |
           docker rm -f serving-app || true
-
+      
+      - run: pip install dvc dvc-ssh
+      - run: dvc remote modify --local local_storage url /opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
+      - run: dvc pull -v -j 4
+      
       - name: Start serving container
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
