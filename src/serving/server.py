@@ -160,7 +160,7 @@ def data_drift_check(new_df):
         DataDriftPreset()
     ])
 
-    report.run(reference_data=train_df, current_data=new_df, column_mapping=column_mapping)
+    report.run(reference_data=train_df, current_data=new_df)
 
     # Salva o JSON para análise futura
     report.save_json('drift_report.json')
