@@ -2,6 +2,7 @@ import mlflow
 import pandas as pd
 import joblib
 import numpy as np
+import json
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error, mean_squared_error,r2_score, mean_absolute_error
@@ -183,24 +184,57 @@ def main():
 		# 		for max_leaf_nodes in max_leaf_nodes_list:
 		# 			for max_iter in max_iter_list:
 		#Best parameters: {'learning_rate': 0.1, 'l2_regularization': 0.1, 'max_leaf_nodes': 15, 'max_iter': 400}
+		
+		learning_rate_list = [0.01, 0.1]
+		l2_regularization_list = [0.01, 0.1]
+		max_leaf_nodes_list = [15, 31]
+		max_iter_list = [200, 400]
+		best_param = None 
+		best_model = None
+		for learning_rate in learning_rate_list:
+			for l2_regularization in l2_regularization_list:
+				for max_leaf_nodes in max_leaf_nodes_list:
+					for max_iter in max_iter_list:
+						model= HistGradientBoostingRegressor(learning_rate=learning_rate, l2_regularization=l2_regularization, max_leaf_nodes=max_leaf_nodes, max_iter=max_iter, random_state=42)
+						print(f"Training with: {learning_rate}, {l2_regularization}, {max_leaf_nodes}, {max_iter}")
+						model.fit(X_train, y_train)
+						y_pred = model.predict(X_test)
+						metrics = calculate_metrics(y_test, y_pred)
+						if best_error == 0 or metrics['MSE'] < best_error:
+							best_error = metrics['MSE']
+							#best_run_id = run.info.run_id
+							best_model = model
+							best_param = {
+								"learning_rate": learning_rate,
+								"l2_regularization": l2_regularization,
+								"max_leaf_nodes": max_leaf_nodes,
+								"max_iter": max_iter
+								}
+		print(f"Best parameters: {best_param} best error: {best_error}")
+		json.dump(best_param, open("best_params.json","w"))
+		mlflow.log_artifact("best_params.json", artifact_path="model_params")
+		joblib.dump(baseline_pipeline, "pipeline.pkl")
+		mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
+		signature = mlflow.models.infer_signature(X_train, best_model.predict(X_train))
+		mlflow.sklearn.log_model(best_model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
-		models = [LinearRegression(), HistGradientBoostingRegressor(learning_rate=0.1, l2_regularization=0.1, max_leaf_nodes=15, max_iter=400, random_state=42)]
-		for model in models:
-			print("Training with: " + str(model.__class__.__name__))
-			model.fit(X_train,y_train)
+		# models = [LinearRegression(), HistGradientBoostingRegressor(learning_rate=0.1, l2_regularization=0.1, max_leaf_nodes=15, max_iter=400, random_state=42)]
+		# for model in models:
+		# 	print("Training with: " + str(model.__class__.__name__))
+		# 	model.fit(X_train,y_train)
 
-			joblib.dump(baseline_pipeline, "pipeline.pkl")
-			mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
-			signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-			mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
+		# 	joblib.dump(baseline_pipeline, "pipeline.pkl")
+		# 	mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
+		# 	signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
+		# 	mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
-			y_pred = model.predict(X_test)
+		# 	y_pred = model.predict(X_test)
 
-			metrics = calculate_metrics(y_test, y_pred)
-			if best_error == 0 or metrics['MSE'] < best_error:
-				best_error = metrics['MSE']
-				best_run_id = run.info.run_id
-				best_model = model.__class__.__name__ 
+		# 	metrics = calculate_metrics(y_test, y_pred)
+		# 	if best_error == 0 or metrics['MSE'] < best_error:
+		# 		best_error = metrics['MSE']
+		# 		best_run_id = run.info.run_id
+		# 		best_model = model.__class__.__name__ 
 
 		print(f"\nBest model run_id: {best_run_id} with MSE: {best_error}")
 		print("Best model name:" + str(best_model))
