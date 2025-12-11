@@ -142,8 +142,8 @@ def health():
     return jsonify(status="healthy", model_loaded=app.config["MODEL"] is not None)
 
 def data_drift_check(new_df):
-    from evidently.report import Report
-    from evidently.metric_preset import DataDriftPreset
+    from evidently import Report
+    from evidently.metrics import DataDriftMetrics
 
     train_df = pd.read_parquet('data/preprocessed/final_subsampled_dataset.parquet')
 
@@ -156,7 +156,10 @@ def data_drift_check(new_df):
     }
 
     # Cria o relatório de comparação
-    report = Report(metrics=[DataDriftPreset()])
+    report = Report(metrics=[
+        DataDriftMetrics()
+    ])
+
     report.run(reference_data=train_df, current_data=new_df, column_mapping=column_mapping)
 
     # Salva o JSON para análise futura
