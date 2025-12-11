@@ -167,8 +167,15 @@ def data_drift_check(new_df):
     #report.save_json('drift_report.json')
 
     # Verifica a Regra de Decisão
-    print(my_eval.dict())
-    drift_detected = my_eval.dict()['metrics'][0]['result']['dataset_drift']
+    result = my_eval.dict()
+    print(result)
+    drift_share = result['metrics'][0]['value']['share']
+
+    # Check drift
+    drift_detected = drift_share > 0.5
+
+    print("Drift share:", drift_share)
+    print("Drift detected:", drift_detected)
 
     return drift_detected
 
