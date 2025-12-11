@@ -62,5 +62,5 @@ jobs:
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
-            --network monitoring-net \
+            --network mlops-network \
           ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/serving:production
