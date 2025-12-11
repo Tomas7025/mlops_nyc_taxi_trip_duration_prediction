@@ -172,10 +172,10 @@ def main():
 		best_error = 0
 		best_model = None
 		#Best parameters: {'learning_rate': 0.1, 'l2_regularization': 0.1, 'max_leaf_nodes': 15, 'max_iter': 400}
-		learning_rate_list = [0.01, 0.1]
-		l2_regularization_list = [0.01, 0.1]
-		max_leaf_nodes_list = [15, 31]
-		max_iter_list = [200, 400]
+		learning_rate_list = [0.1]#[0.01, 0.1]
+		l2_regularization_list = [0.1]#[0.01, 0.1]
+		max_leaf_nodes_list = [15]#[15, 31]
+		max_iter_list = [400]#[200, 400]
 		best_param = None 
 		best_model = None
 
