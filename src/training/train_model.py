@@ -1,7 +1,7 @@
 import mlflow
 import pandas as pd
 import joblib
-
+import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import root_mean_squared_error, mean_squared_error,r2_score, mean_absolute_error
@@ -10,6 +10,7 @@ from sklearn.preprocessing import OneHotEncoder,StandardScaler
 
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.impute import SimpleImputer
 
 # from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 
@@ -112,13 +113,29 @@ def main():
 		#data = preprocess_data(data)
 			
 		# === Pipeline definition ===
+		#treat 0 trip_distance as missing values
+		data.loc[data['trip_distance'] == 0, 'trip_distance'] = np.nan
 		preprocessor = ColumnTransformer(
 			transformers=[
-				# (name, transformer_object, columns_to_apply_to)
-				('scaler', StandardScaler(), NUM_COLS),
-				('onehot', OneHotEncoder(sparse_output=False), CAT_COLS)
+				(
+					'num',
+					Pipeline([
+						('imputer', SimpleImputer(strategy='mean')),       # <-- Imputes trip_distance
+						('scaler', StandardScaler())
+					]),
+					NUM_COLS
+				),
+
+				(
+					'cat',
+					Pipeline([
+						('imputer', SimpleImputer(strategy='most_frequent')),
+						('onehot', OneHotEncoder(sparse_output=False))
+					]),
+					CAT_COLS
+				)
 			],
-			remainder='passthrough' # Keep all other columns un-transformed
+			remainder='passthrough'
 		)
 		baseline_pipeline = Pipeline(steps=[('pre_processor',preprocessor)])
 		
