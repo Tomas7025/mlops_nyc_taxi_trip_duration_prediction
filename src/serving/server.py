@@ -167,7 +167,7 @@ def data_drift_check(new_df):
     #report.save_json('drift_report.json')
 
     # Verifica a Regra de Decisão
-    drift_detected = report.as_dict()['metrics'][0]['result']['dataset_drift']
+    drift_detected = my_eval.as_dict()['metrics'][0]['result']['dataset_drift']
 
     return drift_detected
 
