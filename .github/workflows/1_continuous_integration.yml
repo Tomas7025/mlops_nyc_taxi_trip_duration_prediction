@@ -24,6 +24,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - run: pip install dvc dvc-ssh
+      - run: dvc remote modify --local local_storage url /opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://admin@10.17.0.162:/opt/dvc_storage
+      # - run: dvc remote modify --local local_storage url ssh://github.com:/opt/dvc_storage
+      - run: dvc pull -v -j 4
+
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
       - run: pip install uv
