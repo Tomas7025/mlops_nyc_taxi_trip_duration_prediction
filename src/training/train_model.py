@@ -151,7 +151,20 @@ def main():
 		best_error = 0
 		best_run_id = None
 		best_model = None
-		models = [LinearRegression(), HistGradientBoostingRegressor(random_state=42)]
+		#learning_rate_list = [0.001, 0.01, 0.1]
+		#l2_regularization_list = [0, 0.01, 0.1]
+		#max_leaf_nodes_list = [15, 31, 63]
+		#max_iter_list = [100, 200, 400]
+		
+		#best_param = None 
+				
+		# for learning_rate in learning_rate_list:
+		# 	for l2_regularization in l2_regularization_list:
+		# 		for max_leaf_nodes in max_leaf_nodes_list:
+		# 			for max_iter in max_iter_list:
+		#Best parameters: {'learning_rate': 0.1, 'l2_regularization': 0.1, 'max_leaf_nodes': 15, 'max_iter': 400}
+
+		models = [LinearRegression(), HistGradientBoostingRegressor(learning_rate=0.1, l2_regularization=0.1, max_leaf_nodes=15, max_iter=400, random_state=42)]
 		for model in models:
 			print("Training with: " + str(model.__class__.__name__))
 			model.fit(X_train,y_train)

@@ -1,0 +1,83 @@
+# groups:
+#   - name: drift_alerts
+#     rules:
+#       - alert: HighPredictionDrift
+#         expr: histogram_quantile(0.50, sum(rate(model_prediction_duration_minutes_bucket[10m])) by (le)) > 45
+#         for: 5m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "High Median Prediction Duration detected"
+#           description: "The median predicted trip duration is above 45 minutes for more than 5 minutes. This might indicate data drift or model issues."
+
+#       - alert: HighErrorRate
+#         expr: rate(http_requests_total{status_code=~"5.."}[5m]) > 0.1
+#         for: 2m
+#         labels:
+#           severity: critical
+#         annotations:
+#           summary: "High Error Rate detected"
+#           description: "The application is returning 5xx errors for more than 10% of requests."
+
+#       - alert: DriftTripDistance
+#         # Mude [5m] para [1m] (Janela mais curta)
+#         expr: rate(model_input_trip_distance_bucket{le="50.0"}[1m]) / ignoring(le) rate(model_input_trip_distance_count[1m]) < 0.8
+#         for: 1m
+#         labels:
+#           severity: warning
+#         annotations:
+#           summary: "Trip Distance Drift detected"
+#           description: "More than 20% of trips are longer than 50 miles."
+#           for: 10s
+
+groups:
+  - name: drift_alerts
+    rules:
+      # 1. Feature Drift: Distância da Viagem (Input)
+      # Alerta se 95% das viagens forem maiores que 20km (ou milhas)
+      - alert: HighInputDistanceDrift
+        expr: histogram_quantile(0.95, sum(rate(model_input_trip_distance_bucket[15m])) by (le)) > 20
+        for: 5m
+        labels:
+          severity: warning
+          drift_type: feature
+        annotations:
+          summary: "Input Drift Detected (Distance)"
+          description: "The 95th percentile of trip distance is above 20km. Current value: {{ $value }}."
+
+      # 2. Model Drift: Duração Prevista (Output)
+      # Alerta se o modelo começar a prever viagens > 60 min para a maioria dos casos
+      # Atenção: Certifica-te que o nome da métrica bate certo com o teu server.py novo!
+      - alert: HighPredictionDurationDrift
+        expr: histogram_quantile(0.95, sum(rate(model_prediction_duration_minutes_bucket[15m])) by (le)) > 45
+        for: 5m
+        labels:
+          severity: critical
+          drift_type: model
+        annotations:
+          summary: "Output Drift Detected (Duration)"
+          description: "The model is predicting unusually long trips (> 60 min). Check if model is degraded."
+
+      # 3. Operational Drift: Taxa de Erro
+      # Alerta se > 10% dos pedidos falham com erro 5xx
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          drift_type: operational
+        annotations:
+          summary: "High Error Rate"
+          description: "The application error rate is {{ $value }} (above 10%)."
+
+      # 4. Data Quality Drift: Taxa de Erros de Cliente (Schema incorreto?)
+      # Se tivermos muitos 4xx, pode ser que o formato dos dados tenha mudado na origem.
+      - alert: HighClientErrorRate
+        expr: rate(http_requests_total{status_code=~"4.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+          drift_type: data_quality
+        annotations:
+          summary: "High Client Error Rate (Schema Drift?)"
+          description: "More than 10% of requests are invalid (4xx). Check if input schema has changed."
