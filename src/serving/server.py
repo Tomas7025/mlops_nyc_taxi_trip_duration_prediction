@@ -242,9 +242,9 @@ def predict():
             predictions = model.predict(X).tolist()
 
             # 
-            is_data_drift = data_drift_check(df)
-            if is_data_drift:
-                print("Data drift detected in the input data.")
+            #is_data_drift = data_drift_check(df)
+            #if is_data_drift:
+            #    print("Data drift detected in the input data.")
             # 
 
             # Log custom metrics
