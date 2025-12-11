@@ -8,3 +8,4 @@ pandas
 joblib
 evidently==0.7.17
 prometheus-client
+sniffio==1.3.1
