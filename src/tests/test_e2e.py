@@ -130,19 +130,19 @@ def test_prediction_multiple_samples():
             },
             {
             "VendorID": 2,
-            "tpep_pickup_datetime": "2013-01-01 00:12:00",
-            "passenger_count": 5,
-            "trip_distance": 0.0,
-            "PULocationID": 264,
-            "DOLocationID": 264
+            "tpep_pickup_datetime": "2013-01-01 00:07:00",
+            "passenger_count": 1,
+            "trip_distance": 1.76,
+            "PULocationID": 79,
+            "DOLocationID": 186
             },
             {
             "VendorID": 2,
-            "tpep_pickup_datetime": "2013-01-01 00:02:00",
-            "passenger_count": 3,
-            "trip_distance": 0.0,
-            "PULocationID": 264,
-            "DOLocationID": 264
+            "tpep_pickup_datetime": "2013-01-01 00:29:00",
+            "passenger_count": 1,
+            "trip_distance": 0.94,
+            "PULocationID": 234,
+            "DOLocationID": 249
             }
         ]
     }
