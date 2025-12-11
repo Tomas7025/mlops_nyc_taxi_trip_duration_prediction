@@ -170,27 +170,28 @@ def main():
 		# X_test = X_test[top_features]
 
 		best_error = 0
-		best_run_id = None
 		best_model = None
-		#learning_rate_list = [0.001, 0.01, 0.1]
-		#l2_regularization_list = [0, 0.01, 0.1]
-		#max_leaf_nodes_list = [15, 31, 63]
-		#max_iter_list = [100, 200, 400]
-		
-		#best_param = None 
-				
-		# for learning_rate in learning_rate_list:
-		# 	for l2_regularization in l2_regularization_list:
-		# 		for max_leaf_nodes in max_leaf_nodes_list:
-		# 			for max_iter in max_iter_list:
 		#Best parameters: {'learning_rate': 0.1, 'l2_regularization': 0.1, 'max_leaf_nodes': 15, 'max_iter': 400}
-		
 		learning_rate_list = [0.01, 0.1]
 		l2_regularization_list = [0.01, 0.1]
 		max_leaf_nodes_list = [15, 31]
 		max_iter_list = [200, 400]
 		best_param = None 
 		best_model = None
+
+		#Linear
+		model = LinearRegression()
+		print("Training with LinearRegression")
+		model.fit(X_train, y_train)
+		y_pred = model.predict(X_test)
+		metrics = calculate_metrics(y_test, y_pred)
+		if best_error == 0 or metrics['MSE'] < best_error:
+			best_error = metrics['MSE']
+			best_model = model
+
+		print("Best error so far:" + str(best_error))
+
+		#HistGradientBoosting
 		for learning_rate in learning_rate_list:
 			for l2_regularization in l2_regularization_list:
 				for max_leaf_nodes in max_leaf_nodes_list:
@@ -202,7 +203,6 @@ def main():
 						metrics = calculate_metrics(y_test, y_pred)
 						if best_error == 0 or metrics['MSE'] < best_error:
 							best_error = metrics['MSE']
-							best_run_id = run.info.run_id
 							best_model = model
 							best_param = {
 								"learning_rate": learning_rate,
@@ -210,6 +210,7 @@ def main():
 								"max_leaf_nodes": max_leaf_nodes,
 								"max_iter": max_iter
 								}
+		
 		print(f"Best parameters: {best_param} best error: {best_error}")
 		json.dump(best_param, open("best_params.json","w"))
 		mlflow.log_artifact("best_params.json", artifact_path="model_params")
@@ -235,10 +236,10 @@ def main():
 		# 		best_error = metrics['MSE']
 		# 		best_run_id = run.info.run_id
 		# 		best_model = model.__class__.__name__ 
-
-		print(f"\nBest model run_id: {best_run_id} with MSE: {best_error}")
+		
+		print(f"\nBest model run_id: {run.info.run_id} with MSE: {best_error}")
 		print("Best model name:" + str(best_model))
-		model_uri = f"runs:/{best_run_id}/{MODEL_NAME}"
+		model_uri = f"runs:/{run.info.run_id}/{MODEL_NAME}"
 		print(f"\nmodel_uri: {model_uri}")
 			
 
