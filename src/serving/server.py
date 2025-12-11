@@ -161,7 +161,8 @@ def data_drift_check(new_df):
     ])
 
     my_eval = report.run(reference_data=train_df, current_data=new_df)
-    json.dump(my_eval.as_dict(), open('drift_report.json','w'))
+    my_eval.save_json('drift_report.json')
+    #json.dump(my_eval, open('drift_report.json','w'))
     # Salva o JSON para análise futura
     #report.save_json('drift_report.json')
 
