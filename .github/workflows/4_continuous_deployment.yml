@@ -68,6 +68,7 @@ jobs:
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
         run: |
           docker run -d --name serving-app -p 9001:8080 \
+            -v data/preprocessed/:data/preprocessed/ \
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
