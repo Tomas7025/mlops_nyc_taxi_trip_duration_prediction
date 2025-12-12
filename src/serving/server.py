@@ -11,9 +11,6 @@ from sklearn.pipeline import Pipeline
 # from transformers import columnDropperTransformer,pickupDataTransformer,oneHotEncodingTransformer,standarScalingTransformer,missingDataTransformer, lowerCaseTransformer
 from prometheus_client import Histogram, Counter, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
-import threading
-import requests
-
 # Allow all hosts to connect to Mlflow
 os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 
@@ -83,11 +80,11 @@ CAT_COLS = ['VendorID','RatecodeID','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
 INPUT_COLS = ['VendorID', 'tpep_pickup_datetime', 'passenger_count', 'trip_distance', 'PULocationID', 'DOLocationID']
 
-MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME', "modelo_test")
+MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
 if not MODEL_NAME:
     raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
 
-MODEL_ALIAS = os.getenv("MODEL_ALIAS", "production")
+MODEL_ALIAS = os.getenv("MODEL_ALIAS")
 
 # Try to load model and pipeline once on startup
 try:
@@ -144,7 +141,7 @@ def health():
     """Simple health check."""
     return jsonify(status="healthy", model_loaded=app.config["MODEL"] is not None)
 
-def is_data_drift(new_df):
+def data_drift_check(new_df):
     from evidently import Report
     from evidently.presets import DataDriftPreset
     import json
@@ -182,8 +179,10 @@ def is_data_drift(new_df):
 
     return drift_detected
 
-new_data = pd.DataFrame()
-lock = threading.Lock()
+# @app.route("/report",methods=["GET"])
+# def drift_report():
+    
+#     return 
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -210,9 +209,6 @@ def predict():
             # Capture VendorIDs for metrics
             vendor_ids = df['VendorID'].tolist() if 'VendorID' in df.columns else []
             
-            # DEBUG do que é recebido
-            print(f"[DEBUG] Received columns: {df.columns.tolist()}")
-
             # Log Input Metrics
             if 'trip_distance' in df.columns:
                 for val in df['trip_distance']:
@@ -245,6 +241,11 @@ def predict():
 
             predictions = model.predict(X).tolist()
 
+            # 
+            #is_data_drift = data_drift_check(df)
+            #if is_data_drift:
+            #    print("Data drift detected in the input data.")
+            # 
 
             # Log custom metrics
             for i, pred in enumerate(predictions):
@@ -257,14 +258,6 @@ def predict():
                 print(f"Logged metric for prediction: {pred}, VendorID: {v_id}", flush=True)
 
             HTTP_REQUEST_COUNT.labels(method='POST', endpoint='/predict', status_code=200).inc()
-
-            # Store new data for drift detection
-            with lock:
-                global new_data
-                new_data = pd.concat([new_data, df])
-            # get para o endpoint /drift_check
-            requests.get("http://localhost:8080/drift_check")
-
             return jsonify({
                 "predictions": predictions
             })
@@ -273,27 +266,6 @@ def predict():
             print(f"Error during prediction: {e}", flush=True)
             HTTP_REQUEST_COUNT.labels(method='POST', endpoint='/predict', status_code=400).inc()
             return jsonify({"error": str(e)}), 400
-
-
-@app.route("/drift_check", methods=["GET"])
-def drift_check():
-
-    with lock:
-        global new_data
-        if new_data.shape[0] < 500:
-            print("Not enough new data for drift check.")
-            return jsonify(drift_detected=False)  # Not enough data to check drift
-
-        is_drift = is_data_drift(new_data)
-        new_data = pd.DataFrame()  # Reset after check
-
-        if is_drift:
-            # TODO: Insert re-train trigger logic here
-            print("Data drift detected via /drift_check endpoint.")
-            return jsonify(drift_detected=True)
-    
-    return jsonify(drift_detected=False)
-
 
 @app.route("/reload", methods=["GET"])
 def reload_model():
