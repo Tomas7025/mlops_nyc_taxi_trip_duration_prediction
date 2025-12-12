@@ -210,6 +210,9 @@ def predict():
             # Capture VendorIDs for metrics
             vendor_ids = df['VendorID'].tolist() if 'VendorID' in df.columns else []
             
+            # DEBUG do que é recebido
+            print(f"[DEBUG] Received columns: {df.columns.tolist()}")
+
             # Log Input Metrics
             if 'trip_distance' in df.columns:
                 for val in df['trip_distance']:
