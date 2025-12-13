@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error
 from evidently import Report, Regression, Dataset
 from evidently.presets import DataDriftPreset, RegressionPreset
 from evidently import DataDefinition
-from prometheus_client import start_http_server, Gauge
+from prometheus_client import start_http_server, Gauge, Counter
 
 # Configuração de Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,6 +31,7 @@ DRIFT_DETECTED_GAUGE = Gauge('evidently_drift_detected', '1 if drift is detected
 DATA_DRIFT_SCORE = Gauge('evidently_data_drift_score', 'Share of drifted features')
 TARGET_DRIFT_SCORE = Gauge('evidently_target_drift_score', 'Drift score for the target')
 MSE_SCORE = Gauge('mse_score','MSE score')
+MSE_OVER_THRESHOLD_COUNTER = Counter('mse_over_threshold_counter','Counter for MSE over threshold')
 
 def trigger_retraining_workflow():
     """Dispara um workflow no GitHub Actions via repository_dispatch"""
@@ -129,6 +130,11 @@ def calculate_metrics(df):
 
     mse = mean_squared_error(df['duration'],df['predicted_duration'])
 
+    logger.info(f'MSE: {mse}')
+
+    if mse > 100:
+        MSE_OVER_THRESHOLD_COUNTER.inc()
+
     MSE_SCORE.set(mse)
 
     return
@@ -149,6 +155,8 @@ def run_analysis():
     if current_data.empty or len(current_data) < MIN_DATA_POINTS:
         logger.info(f"Not enough data to analyze. Current rows with labels: {len(current_data)}")
         return
+
+
 
     conn = sqlite3.connect(DB_PATH)
 
@@ -249,7 +257,7 @@ def main():
     logger.info("Prometheus metrics exposed on port 8000")
     
     # Agendar para correr a cada X tempo (ex: 1 minuto para testes, 1 hora em prod)
-    schedule.every(1).minutes.do(run_analysis)
+    schedule.every(15).minutes.do(run_analysis)
     
     # Correr uma vez logo ao arranque para testar
     run_analysis()

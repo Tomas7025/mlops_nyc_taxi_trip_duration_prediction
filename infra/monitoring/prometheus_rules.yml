@@ -81,3 +81,27 @@ groups:
         annotations:
           summary: "High Client Error Rate (Schema Drift?)"
           description: "More than 10% of requests are invalid (4xx). Check if input schema has changed."
+      
+      - alert: ConceptDrift
+        expr: mse_score > 100
+        for: 1m
+        labels: 
+          severity: warning
+          drift_type: concept
+        annotations:
+          summary: "WARNING: High Mean Squared Error (MSE) detected for Production Model."
+          description: |
+            The MSE has exceeded the acceptable MSE threshold (100).
+            This indicates concept drift.
+      
+      - alert: ConceptDriftThroughCounter
+        expr: increase(mse_over_threshold_counter_total[300m]) > 5
+        for: 1m
+        labels: 
+          severity: critical
+          drift_type: concept
+        annotations:
+          summary: "CRITICAL: High Mean Squared Error (MSE) consistently detected for Production Model."
+          description: |
+            The MSE has exceeded the acceptable MSE threshold (100) over 5 times during the last 5 hours.
+            This indicates significant concept drift.
