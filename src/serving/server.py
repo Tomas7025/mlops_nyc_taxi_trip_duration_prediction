@@ -19,8 +19,8 @@ os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI","http://10.17.0.162:5000"))
 app = Flask(__name__)
 
-# DB_PATH = os.getenv("DB_PATH", "/app/data/monitoring.db")
-DB_PATH = os.getenv("DB_PATH", "data/monitoring.db")
+DB_PATH = os.getenv("DB_PATH", "/app/data/monitoring.db")
+# DB_PATH = os.getenv("DB_PATH", "data/monitoring.db")
 
 # Standard Metrics (Manual)
 HTTP_REQUEST_COUNT = Counter(
@@ -131,6 +131,8 @@ def submit_labels():
 
         conn = sqlite3.connect(DB_PATH)
         
+        df["label_id"] = df.index
+
         try:
             df.to_sql(
                 'labels', # The name of the SQL table
@@ -286,10 +288,11 @@ def predict():
 
             conn = sqlite3.connect(DB_PATH)
 
+            df["data_id"] = df.index
             df['predicted_duration'] = predictions
             df['request_id'] = [data["request_id"] for _ in range(len(predictions))]
             column_order = [
-                'request_id', 'VendorID', 'passenger_count', 'trip_distance',
+                'request_id', 'data_id', 'VendorID', 'passenger_count', 'trip_distance',
                 'pickup_hour', 'pickup_day_of_week', 'pickup_month', 'pickup_day',
                 'PULocationID', 'DOLocationID', 'predicted_duration'
             ]
