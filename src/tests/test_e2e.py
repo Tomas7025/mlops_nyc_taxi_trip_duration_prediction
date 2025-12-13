@@ -71,6 +71,7 @@ def test_prediction_single_sample():
     
     # Make prediction
     payload = {
+        "request_id": 1,
         "data": [
             {
             "VendorID": 2,
@@ -119,6 +120,7 @@ def test_prediction_multiple_samples():
     # }
 
     payload = {
+        "request_id": 1,
         "data": [
             {
             "VendorID": 2,
@@ -243,6 +245,7 @@ def test_concurrent_predictions():
     #     "inputs": [2,"2013-01-01 00:39:00",3,3.86,238,116]
     # }
     payload = {
+        "request_id": 1,
         "data": [
             {
             "VendorID": 2,

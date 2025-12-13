@@ -70,6 +70,7 @@ def test_predict_without_model(client):
         response = client.post(
             '/predict',
             data=json.dumps({
+                "request_id": 1,
                 "data": [
                             {
                             "VendorID": 2,
@@ -95,6 +96,7 @@ def test_predict_with_model(client, mock_model, mock_pipeline):
         response = client.post(
             '/predict',
             data=json.dumps({
+                "request_id": 1,
                 "data": [
                     {
                     "VendorID": 2,
@@ -255,6 +257,7 @@ def test_predict_correct_dataframe_creation(client, mock_model, mock_pipeline):
         response = client.post(
             '/predict',
             data=json.dumps({
+                "request_id": 1,
                 'data': test_data
             }),
             content_type='application/json'
