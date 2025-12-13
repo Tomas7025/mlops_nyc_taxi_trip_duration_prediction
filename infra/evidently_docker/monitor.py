@@ -5,6 +5,7 @@ import time
 import schedule
 import logging
 import requests
+from sklearn.metrics import mean_squared_error
 from evidently import Report, Regression, Dataset
 from evidently.presets import DataDriftPreset, RegressionPreset
 from evidently import DataDefinition
@@ -29,6 +30,7 @@ REPO_NAME = os.getenv("REPO_NAME", "proj_LAIA")
 DRIFT_DETECTED_GAUGE = Gauge('evidently_drift_detected', '1 if drift is detected, 0 otherwise')
 DATA_DRIFT_SCORE = Gauge('evidently_data_drift_score', 'Share of drifted features')
 TARGET_DRIFT_SCORE = Gauge('evidently_target_drift_score', 'Drift score for the target')
+MSE_SCORE = Gauge('mse_score','MSE score')
 
 def trigger_retraining_workflow():
     """Dispara um workflow no GitHub Actions via repository_dispatch"""
@@ -123,12 +125,22 @@ def fetch_current_data():
         logger.error(f"Error fetching data from SQLite: {e}")
         return pd.DataFrame()
 
+def calculate_metrics(df):
+
+    mse = mean_squared_error(df['duration'],df['predicted_duration'])
+
+    MSE_SCORE.set(mse)
+
+    return
+
 def run_analysis():
     logger.info("Starting monitoring cycle...")
     
     reference_data = load_reference_data()
     logger.info("DEBUG 7")
     current_data = fetch_current_data()
+
+    calculate_metrics(current_data)
     
     if reference_data is None:
         logger.warning("Skipping analysis: No reference data.")
@@ -164,8 +176,7 @@ def run_analysis():
     )
 
     report = Report(metrics=[
-        DataDriftPreset(),
-        RegressionPreset()
+        DataDriftPreset()
     ])
 
     try:
@@ -205,19 +216,20 @@ def run_analysis():
         # A estrutura exata depende do preset, mas vamos tentar extrair o share de drift
         try:
             # Data Drift
-            data_drift_share = int(metrics['metrics'][0]['value']['count'] > 0)
+            data_drift_share = metrics['metrics'][0]['value']['share']
             DATA_DRIFT_SCORE.set(data_drift_share)
+            data_drift = data_drift_share > 0
             
             # Concept drift
             # target_drift_score = int(metrics['metrics'][1]['value']['share'] > 0.5)
             # TARGET_DRIFT_SCORE.set(target_drift_score)
             
             # Decisão Global de Drift ???
-            dataset_drift = True if data_drift_share == 1 else False# or target_drift_score == 1 else False
+            # dataset_drift = True if data_drift_share == 1 or target_drift_score == 1 else False
             
-            if dataset_drift:
+            if data_drift:
                 DRIFT_DETECTED_GAUGE.set(1)
-                logger.warning("🚨 DATA DRIFT DETECTED! 🚨")
+                logger.warning("🚨 DRIFT DETECTED! 🚨")
                 trigger_retraining_workflow()
             else:
                 DRIFT_DETECTED_GAUGE.set(0)
