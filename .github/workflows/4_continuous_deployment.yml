@@ -69,6 +69,7 @@ jobs:
           DB_PATH: "/app/data/monitoring.db"
         run: |
           docker run -d --name serving-app -p 9001:8080 \
+            -v ./data:/app/data \
             -e MLFLOW_TRACKING_URI \
             -e MODEL_ALIAS \
             -e MLFLOW_MODEL_NAME \
