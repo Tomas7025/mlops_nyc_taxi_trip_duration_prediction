@@ -344,9 +344,11 @@ def predict():
             })
 
         except Exception as e:
-            print(f"[ERROR] Error during prediction: {e}", flush=True)
+            import traceback
+            full = traceback.format_exc()
+            print(f"[ERROR] Error during prediction: {full}", flush=True)
             HTTP_REQUEST_COUNT.labels(method='POST', endpoint='/predict', status_code=400).inc()
-            return jsonify({"error": str(e)}), 400
+            return jsonify({"error": str(full)}), 400
 
 @app.route("/reload", methods=["GET"])
 def reload_model():
