@@ -57,6 +57,8 @@ services:
       - MIN_DATA_POINTS=50
     networks:
       - monitoring-net
+    env_file:
+      - .env
 
 networks:
   monitoring-net:

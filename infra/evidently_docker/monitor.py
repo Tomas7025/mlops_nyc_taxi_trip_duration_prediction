@@ -5,8 +5,9 @@ import time
 import schedule
 import logging
 import requests
-from evidently import Report
+from evidently import Report, Regression, Dataset
 from evidently.presets import DataDriftPreset, RegressionPreset
+from evidently import DataDefinition
 from prometheus_client import start_http_server, Gauge
 
 # Configuração de Logging
@@ -64,6 +65,7 @@ def load_reference_data():
         if os.path.exists(REFERENCE_DATA_PATH):
             logger.info("DEBUG 2")
             df = pd.read_parquet(REFERENCE_DATA_PATH)
+            df['predicted_duration'] = df['duration']
             logger.info("DEBUG 3")
             logger.info(f"Reference data loaded. Shape: {df.shape}")
             logger.info("DEBUG 4")
@@ -102,7 +104,9 @@ def fetch_current_data():
         df = pd.read_sql_query(query, conn)
         df = df[['VendorID', 'passenger_count', 'trip_distance',
                 'pickup_hour', 'pickup_day_of_week', 'pickup_month', 'pickup_day',
-                'PULocationID', 'DOLocationID', 'predicted_duration','real_duration']]
+                'PULocationID', 'DOLocationID', 'predicted_duration', 'real_duration']]
+        df["duration"] = df["real_duration"]
+        df.drop('real_duration',axis=1,inplace=True)
         logger.info(f"Columns: {df.columns}")
         logger.info(f'Dataframe: {df}')
         logger.info(f'Missing Values: {df.isnull().sum()}')
@@ -152,6 +156,12 @@ def run_analysis():
 
     # 1. Configurar o Relatório do Evidently
     # Usamos Presets para facilitar: Drift de Dados e Qualidade de Regressão (RMSE, MAE, etc)
+    
+    data_definition = DataDefinition(
+        numerical_columns = ["trip_distance"],
+        categorical_columns = ["VendorID","passenger_count","pickup_hour","pickup_day_of_week","pickup_month","pickup_day","PULocationID","DOLocationID"],
+        regression = [Regression(target='duration',prediction='predicted_duration')],
+    )
 
     report = Report(metrics=[
         DataDriftPreset(),
@@ -162,31 +172,48 @@ def run_analysis():
         # 2. Correr o Relatório
         # Nota: Garante que as colunas do current_data batem certo com o reference_data
         # O Evidently ignora colunas extra no current, mas precisa das features do reference.
-        report.run(reference_data=reference_data, current_data=current_data)
+        report.data_definition = data_definition
+
+        # ???
+        reference_data_ev = Dataset.from_pandas(
+            pd.DataFrame(reference_data),
+            data_definition=data_definition,
+        )
         
+        current_data_ev = Dataset.from_pandas(
+            pd.DataFrame(current_data),
+            data_definition=data_definition,
+        )
+        # ???
+
+        my_eval = report.run(reference_data=reference_data_ev, current_data=current_data_ev)
+        my_eval.save_json('drift_report.json')
+
         # 3. Guardar o Relatório HTML
         os.makedirs(REPORT_OUTPUT_PATH, exist_ok=True)
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         report_path = os.path.join(REPORT_OUTPUT_PATH, f"drift_report_{timestamp}.html")
-        report.save_html(report_path)
+        # report.save_html(report_path)
         logger.info(f"Report saved to {report_path}")
 
         # 4. Verificar Resultados (Lógica de Decisão)
-        metrics = report.dict()
-        
+        metrics = my_eval.dict()
+
+        logger.info(f"Passed Dict")
+        logger.info(metrics)
         # Extrair métricas específicas para o Prometheus
         # A estrutura exata depende do preset, mas vamos tentar extrair o share de drift
         try:
             # Data Drift
-            data_drift_share = int(metrics['metrics'][0]['value']['share'] > 0.5)
+            data_drift_share = int(metrics['metrics'][0]['value']['count'] > 0)
             DATA_DRIFT_SCORE.set(data_drift_share)
             
             # Concept drift
-            target_drift_score = int(metrics['metrics'][1]['value']['share'] > 0.5)
-            TARGET_DRIFT_SCORE.set(target_drift_score)
+            # target_drift_score = int(metrics['metrics'][1]['value']['share'] > 0.5)
+            # TARGET_DRIFT_SCORE.set(target_drift_score)
             
             # Decisão Global de Drift ???
-            dataset_drift = True if data_drift_share == 1 or target_drift_score == 1 else False
+            dataset_drift = True if data_drift_share == 1 else False# or target_drift_score == 1 else False
             
             if dataset_drift:
                 DRIFT_DETECTED_GAUGE.set(1)
