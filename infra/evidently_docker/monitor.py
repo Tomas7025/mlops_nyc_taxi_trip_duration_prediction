@@ -145,8 +145,6 @@ def run_analysis():
     reference_data = load_reference_data()
     logger.info("DEBUG 7")
     current_data = fetch_current_data()
-
-    calculate_metrics(current_data)
     
     if reference_data is None:
         logger.warning("Skipping analysis: No reference data.")
@@ -156,7 +154,7 @@ def run_analysis():
         logger.info(f"Not enough data to analyze. Current rows with labels: {len(current_data)}")
         return
 
-
+    calculate_metrics(current_data)
 
     conn = sqlite3.connect(DB_PATH)
 
