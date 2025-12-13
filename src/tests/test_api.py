@@ -258,7 +258,7 @@ def test_predict_correct_dataframe_creation(client, mock_model, mock_pipeline):
             '/predict',
             data=json.dumps({
                 "request_id": 1,
-                'data': test_data
+                "data": test_data
             }),
             content_type='application/json'
         )
