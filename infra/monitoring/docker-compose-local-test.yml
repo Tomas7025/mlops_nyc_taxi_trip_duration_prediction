@@ -60,5 +60,5 @@ services:
 
 networks:
   monitoring-net:
-    name: mlops-network
-    external: true
+    # name: mlops-network
+    # external: true

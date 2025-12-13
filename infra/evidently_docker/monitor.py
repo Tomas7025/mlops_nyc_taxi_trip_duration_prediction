@@ -87,9 +87,19 @@ def fetch_current_data():
             l.real_duration as real_duration
         FROM predictions p
         INNER JOIN labels l ON p.request_id = l.request_id
+        WHERE p.was_checked = 0;
         """
         
         df = pd.read_sql_query(query, conn)
+
+        bool_update = """
+            UPDATE predictions
+            SET was_checked = 1
+            WHERE was_checked = 0;
+        """
+        
+        conn.execute(bool_update)
+
         conn.close()
         
         # Limpeza básica (remover colunas de metadados se necessário)
@@ -177,7 +187,7 @@ def main():
     logger.info("Prometheus metrics exposed on port 8000")
     
     # Agendar para correr a cada X tempo (ex: 1 minuto para testes, 1 hora em prod)
-    schedule.every(30).minutes.do(run_analysis)
+    schedule.every(1).minutes.do(run_analysis)
     
     # Correr uma vez logo ao arranque para testar
     run_analysis()
