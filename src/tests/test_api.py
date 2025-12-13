@@ -251,6 +251,22 @@ def test_predict_correct_dataframe_creation(client, mock_model, mock_pipeline):
             "trip_distance": 3.86,
             "PULocationID": 238,
             "DOLocationID": 116
+            },
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:39:00",
+            "passenger_count": 3,
+            "trip_distance": 3.86,
+            "PULocationID": 238,
+            "DOLocationID": 116
+            },
+            {
+            "VendorID": 2,
+            "tpep_pickup_datetime": "2013-01-01 00:39:00",
+            "passenger_count": 3,
+            "trip_distance": 3.86,
+            "PULocationID": 238,
+            "DOLocationID": 116
             }
         ]
         
