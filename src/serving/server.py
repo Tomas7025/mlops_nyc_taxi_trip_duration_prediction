@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import pickle
+import sqlite3
 import numpy as np
 import pandas as pd
 import joblib
@@ -18,6 +19,8 @@ os.environ["MLFLOW_ALLOWED_HOSTS"] = "*"
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI","http://10.17.0.162:5000"))
 app = Flask(__name__)
 
+# DB_PATH = os.getenv("DB_PATH", "/app/data/monitoring.db")
+DB_PATH = os.getenv("DB_PATH", "data/monitoring.db")
 
 # Standard Metrics (Manual)
 HTTP_REQUEST_COUNT = Counter(
@@ -80,11 +83,11 @@ CAT_COLS = ['VendorID','RatecodeID','payment_type']
 NUM_COLS = ['passenger_count','trip_distance','PULocationID','DOLocationID','fare_amount','extra','mta_tax','tip_amount','tolls_amount','improvement_surcharge','total_amount']
 INPUT_COLS = ['VendorID', 'tpep_pickup_datetime', 'passenger_count', 'trip_distance', 'PULocationID', 'DOLocationID']
 
-MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME')
+MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME', "modelo_test")
 if not MODEL_NAME:
     raise EnvironmentError("Missing required env var: MLFLOW_MODEL_NAME")
 
-MODEL_ALIAS = os.getenv("MODEL_ALIAS")
+MODEL_ALIAS = os.getenv("MODEL_ALIAS", "production")
 
 # Try to load model and pipeline once on startup
 try:
@@ -104,7 +107,7 @@ try:
 except Exception as e:
     app.config["MODEL"] = None
     app.config["PIPELINE"] = None
-    print(f"Could not load model/pipeline at startup: {e}")
+    print(f"[ERROR] Could not load model/pipeline at startup: {e}")
     print("App will start without a model. You can load it later using /reload.")
 
 # #not being used rn
@@ -116,6 +119,40 @@ except Exception as e:
 
 
 #Endpoints
+
+@app.route("/labels", methods=["POST"])
+def submit_labels():
+    data = request.json
+    if data and "request_id" in data:
+        req_id = data["request_id"]
+        df = pd.DataFrame(data["labels"],columns=["real_duration"])
+        df["request_id"] = [req_id for _ in range(len(data["labels"]))]
+        df = df[["request_id","real_duration"]]
+
+        conn = sqlite3.connect(DB_PATH)
+        
+        try:
+            df.to_sql(
+                'labels', # The name of the SQL table
+                conn,           # The established database connection
+                if_exists='append', # What to do if the table already exists:
+                                # 'fail': Stop execution
+                                # 'replace': Drop and recreate table, insert data
+                                # 'append': Add new rows to the existing table
+                index=False        # Do not write the DataFrame's index as a column
+            )
+            print("DataFrame successfully saved to the 'labels' table.")
+            conn.commit()
+
+        except Exception as e:
+            print(f"[ERROR] An error occurred: {e}")
+
+        finally:
+            conn.close()
+
+        return jsonify({"message": f"Labels submitted for request ID: {req_id}", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Invalid or missing payload", "status": "error"}), 400
 
 @app.route('/metrics')
 def metrics():
@@ -247,6 +284,50 @@ def predict():
             #    print("Data drift detected in the input data.")
             # 
 
+            conn = sqlite3.connect(DB_PATH)
+
+            df['predicted_duration'] = predictions
+            df['request_id'] = [data["request_id"] for _ in range(len(predictions))]
+            column_order = [
+                'request_id', 'VendorID', 'passenger_count', 'trip_distance',
+                'pickup_hour', 'pickup_day_of_week', 'pickup_month', 'pickup_day',
+                'PULocationID', 'DOLocationID', 'predicted_duration'
+            ]
+            df = df[column_order]
+
+            try:
+                # x = pd.DataFrame([1])
+                
+                print(data["request_id"])
+
+                conn.execute("INSERT INTO requests VALUES(?)", (data["request_id"],))
+                # request_id_df = pd.DataFrame([df["request_id"].iloc[0]], columns=['request_id'])
+                # request_id_df.to_sql(
+                #     'requests',
+                #     conn,
+                #     if_exists='append',
+                #     index=False
+                # )
+
+                df.to_sql(
+                    'predictions', # The name of the SQL table
+                    conn,           # The established database connection
+                    if_exists='append', # What to do if the table already exists:
+                                    # 'fail': Stop execution
+                                    # 'replace': Drop and recreate table, insert data
+                                    # 'append': Add new rows to the existing table
+                    index=False        # Do not write the DataFrame's index as a column
+                )
+                print("DataFrame successfully saved to the 'predictions' table.")
+                conn.commit()
+                
+            except Exception as e:
+                print(f"[ERROR] An error occurred: {e}")
+
+            finally:
+                conn.close()
+        
+
             # Log custom metrics
             for i, pred in enumerate(predictions):
                 PREDICTION_DISTRIBUTION.observe(pred)
@@ -263,7 +344,7 @@ def predict():
             })
 
         except Exception as e:
-            print(f"Error during prediction: {e}", flush=True)
+            print(f"[ERROR] Error during prediction: {e}", flush=True)
             HTTP_REQUEST_COUNT.labels(method='POST', endpoint='/predict', status_code=400).inc()
             return jsonify({"error": str(e)}), 400
 
@@ -289,7 +370,7 @@ def reload_model():
 
 
 def main():
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True, use_reloader=False)
 
 
 if __name__ == "__main__":

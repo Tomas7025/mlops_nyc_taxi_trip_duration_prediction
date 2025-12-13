@@ -1,0 +1,7 @@
+evidently==0.4.16
+pandas
+numpy
+scikit-learn
+schedule
+prometheus-client
+requests

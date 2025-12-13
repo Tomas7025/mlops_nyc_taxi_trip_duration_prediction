@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+
+  serving-app:
+    build:
+      context: ../../
+      dockerfile: src/serving/Dockerfile
+    volumes:
+      - ../../data:/app/data
+    ports:
+      - "8080:8080"
+    environment:
+      - MLFLOW_TRACKING_URI=http://10.17.0.162:5000 # IP da VM
+      - MLFLOW_MODEL_NAME=modelo_test
+      - MODEL_ALIAS=staging
+    networks:
+      - monitoring-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus_rules.yml:/etc/prometheus/prometheus_rules.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-net
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-net
+
+  evidently-service:
+    build:
+      context: ../../infra/evidently_docker  # Ajusta o caminho conforme a tua estrutura na VM
+    volumes:
+      - ../../data:/app/data        # Onde está o monitoring.db e o reference.parquet
+      - ./reports:/app/reports       # Onde os HTMLs vão aparecer
+    environment:
+      - DB_PATH=/app/data/monitoring.db
+      - REFERENCE_DATA_PATH=/app/data/final_subsampled_dataset.parquet
+      - MIN_DATA_POINTS=50
+    networks:
+      - monitoring-net
+
+networks:
+  monitoring-net:
+    name: mlops-network
+    external: true

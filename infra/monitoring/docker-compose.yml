@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
+
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus_rules.yml:/etc/prometheus/prometheus_rules.yml
@@ -14,7 +14,6 @@ services:
 
   alertmanager:
     image: prom/alertmanager:latest
-    container_name: alertmanager
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
     ports:
@@ -24,11 +23,23 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "3000:3000"
+    networks:
+      - monitoring-net
+
+  evidently-service:
+    build:
+      context: ../../infra/evidently_docker  # Ajusta o caminho conforme a tua estrutura na VM
+    volumes:
+      - ../../data:/app/data        # Onde está o monitoring.db e o reference.parquet
+      - ./reports:/app/reports       # Onde os HTMLs vão aparecer
+    environment:
+      - DB_PATH=/app/data/monitoring.db
+      - REFERENCE_DATA_PATH=/app/data/final_subsampled_dataset.parquet
+      - MIN_DATA_POINTS=50
     networks:
       - monitoring-net
 

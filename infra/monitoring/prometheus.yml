@@ -15,3 +15,8 @@ scrape_configs:
     static_configs:
       # O nome 'serving-app' tem de bater certo com o --name no Deploy Workflow
       - targets: ['serving-app:8080']
+
+  - job_name: 'evidently'
+    scrape_interval: 1m
+    static_configs:
+      - targets: ['evidently-service:8000']
