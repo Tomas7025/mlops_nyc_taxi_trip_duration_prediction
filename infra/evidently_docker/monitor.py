@@ -5,8 +5,8 @@ import time
 import schedule
 import logging
 import requests
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset, RegressionPreset, TargetDriftPreset
+from evidently import Report
+from evidently.presets import DataDriftPreset, RegressionPreset
 from prometheus_client import start_http_server, Gauge
 
 # Configuração de Logging
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Configurações
 DB_PATH = os.getenv("DB_PATH", "/app/data/monitoring.db")
-REFERENCE_DATA_PATH = os.getenv("REFERENCE_DATA_PATH", "/app/data/final_subsampled_dataset.parquet")
+REFERENCE_DATA_PATH = os.getenv("REFERENCE_DATA_PATH", "/app/data/preprocessed/final_subsampled_dataset.parquet")
 REPORT_OUTPUT_PATH = os.getenv("REPORT_OUTPUT_PATH", "/app/reports")
 MIN_DATA_POINTS = int(os.getenv("MIN_DATA_POINTS", "50"))
 
@@ -58,16 +58,22 @@ def trigger_retraining_workflow():
         logger.error(f"Error triggering workflow: {e}")
 
 def load_reference_data():
+    print("DEBUG 1")
     """Carrega os dados de treino (referência)"""
     try:
         if os.path.exists(REFERENCE_DATA_PATH):
+            print("DEBUG 2")
             df = pd.read_parquet(REFERENCE_DATA_PATH)
+            print("DEBUG 3")
             logger.info(f"Reference data loaded. Shape: {df.shape}")
+            print("DEBUG 4")
             return df
         else:
+            print("DEBUG 5")
             logger.error(f"Reference data not found at {REFERENCE_DATA_PATH}")
             return None
     except Exception as e:
+        print("DEBUG 6")
         logger.error(f"Error loading reference data: {e}")
         return None
 
@@ -76,8 +82,11 @@ def fetch_current_data():
     Lê os dados do SQLite.
     Faz o JOIN entre predições e labels para ter o dataset completo.
     """
+    print("DEBUG 8")
     try:
+        print("DEBUG 9")
         conn = sqlite3.connect(DB_PATH)
+        print("DEBUG 10")
         
         # Query para juntar Features + Predição + Label (Target)
         # Assumindo que tens tabelas 'predictions' e 'labels' com 'request_id' comum
@@ -91,7 +100,7 @@ def fetch_current_data():
         """
         
         df = pd.read_sql_query(query, conn)
-
+        print("DEBUG 11")
         bool_update = """
             UPDATE predictions
             SET was_checked = 1
@@ -99,6 +108,7 @@ def fetch_current_data():
         """
         
         conn.execute(bool_update)
+        print("DEBUG 12")
 
         conn.close()
         
@@ -115,6 +125,7 @@ def run_analysis():
     logger.info("Starting monitoring cycle...")
     
     reference_data = load_reference_data()
+    print("DEBUG 7")
     current_data = fetch_current_data()
     
     if reference_data is None:
@@ -129,9 +140,9 @@ def run_analysis():
 
     # 1. Configurar o Relatório do Evidently
     # Usamos Presets para facilitar: Drift de Dados e Qualidade de Regressão (RMSE, MAE, etc)
+
     report = Report(metrics=[
         DataDriftPreset(),
-        TargetDriftPreset(),
         RegressionPreset()
     ])
 
