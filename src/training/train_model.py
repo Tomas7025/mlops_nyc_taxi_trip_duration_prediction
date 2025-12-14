@@ -187,12 +187,12 @@ def main():
 		print("Best error so far:" + str(best_error))
 
 		#HistGradientBoosting
+		#random seed everytime for reproducibility
+		seed = np.random.randint(1000000)
 		for learning_rate in learning_rate_list:
 			for l2_regularization in l2_regularization_list:
 				for max_leaf_nodes in max_leaf_nodes_list:
 					for max_iter in max_iter_list:
-						#random seed everytime for reproducibility
-						seed = np.random.randint(1000000)
 						model= HistGradientBoostingRegressor(learning_rate=learning_rate, l2_regularization=l2_regularization, max_leaf_nodes=max_leaf_nodes, max_iter=max_iter, random_state=seed)
 						print(f"Training with: {learning_rate}, {l2_regularization}, {max_leaf_nodes}, {max_iter}")
 						model.fit(X_train, y_train)
