@@ -213,7 +213,7 @@ def main():
 		mlflow.log_metric("MSE", best_metrics['MSE'])
 		mlflow.log_metric("MAE", best_metrics['MAE'])
 		mlflow.log_metric("RMSE", best_metrics['RMSE'])
-		mlflow.log_metric("R2_SCORE", best_metrics['R2_SCORE'])
+		mlflow.log_metric("R2_SCORE", best_metrics['R2SCORE'])
 		
 		print(f"Best parameters: {best_param} best error: {best_error}")
 		json.dump(best_param, open("best_params.json","w"))
