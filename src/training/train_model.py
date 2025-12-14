@@ -69,11 +69,6 @@ def calculate_metrics(y_test, y_pred):
 	print(f"RMSE: {str(round(rmse,3))}")
 	print(f"R2SCORE: {str(round(r2score,3))}")
 
-	mlflow.log_metric("MSE", mse)
-	mlflow.log_metric("MAE", mae)
-	mlflow.log_metric("RMSE", rmse)
-	mlflow.log_metric("R2_SCORE", r2score)
-
 	return {
 		"MSE": mse,
 		"MAE": mae,
@@ -152,7 +147,6 @@ def main():
 		X_train = baseline_pipeline.transform(X_train)
 		X_test = baseline_pipeline.transform(X_test)
 		
-		# Comentei por agora para testar com tudo
 		#
 		# # === Compute correlations ===
 		# data_train = X_train.copy()
@@ -169,16 +163,16 @@ def main():
 		# X_train = X_train[top_features]
 		# X_test = X_test[top_features]
 
-		best_error = 0
-		best_model = None
 		#Best parameters: {'learning_rate': 0.1, 'l2_regularization': 0.1, 'max_leaf_nodes': 15, 'max_iter': 400}
-		learning_rate_list = [0.1]#[0.01, 0.1]
-		l2_regularization_list = [0.1]#[0.01, 0.1]
-		max_leaf_nodes_list = [15]#[15, 31]
-		max_iter_list = [400]#[200, 400]
+		learning_rate_list = [0.01, 0.1]
+		l2_regularization_list = [0.01, 0.1]
+		max_leaf_nodes_list = [15, 31]
+		max_iter_list = [200, 400]
+		best_error = 0
+		best_metrics = None
 		best_param = None 
 		best_model = None
-
+		
 		#Linear
 		model = LinearRegression()
 		print("Training with LinearRegression")
@@ -188,6 +182,7 @@ def main():
 		if best_error == 0 or metrics['MSE'] < best_error:
 			best_error = metrics['MSE']
 			best_model = model
+			best_metrics = metrics
 
 		print("Best error so far:" + str(best_error))
 
@@ -196,7 +191,9 @@ def main():
 			for l2_regularization in l2_regularization_list:
 				for max_leaf_nodes in max_leaf_nodes_list:
 					for max_iter in max_iter_list:
-						model= HistGradientBoostingRegressor(learning_rate=learning_rate, l2_regularization=l2_regularization, max_leaf_nodes=max_leaf_nodes, max_iter=max_iter, random_state=42)
+						#random seed everytime for reproducibility
+						seed = np.random.randint(1000000)
+						model= HistGradientBoostingRegressor(learning_rate=learning_rate, l2_regularization=l2_regularization, max_leaf_nodes=max_leaf_nodes, max_iter=max_iter, random_state=seed)
 						print(f"Training with: {learning_rate}, {l2_regularization}, {max_leaf_nodes}, {max_iter}")
 						model.fit(X_train, y_train)
 						y_pred = model.predict(X_test)
@@ -208,8 +205,15 @@ def main():
 								"learning_rate": learning_rate,
 								"l2_regularization": l2_regularization,
 								"max_leaf_nodes": max_leaf_nodes,
-								"max_iter": max_iter
+								"max_iter": max_iter,
+								"seed": seed
 								}
+							best_metrics = metrics
+						
+		mlflow.log_metric("MSE", best_metrics['MSE'])
+		mlflow.log_metric("MAE", best_metrics['MAE'])
+		mlflow.log_metric("RMSE", best_metrics['RMSE'])
+		mlflow.log_metric("R2_SCORE", best_metrics['R2_SCORE'])
 		
 		print(f"Best parameters: {best_param} best error: {best_error}")
 		json.dump(best_param, open("best_params.json","w"))
@@ -219,23 +223,6 @@ def main():
 		signature = mlflow.models.infer_signature(X_train, best_model.predict(X_train))
 		mlflow.sklearn.log_model(best_model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
 
-		# models = [LinearRegression(), HistGradientBoostingRegressor(learning_rate=0.1, l2_regularization=0.1, max_leaf_nodes=15, max_iter=400, random_state=42)]
-		# for model in models:
-		# 	print("Training with: " + str(model.__class__.__name__))
-		# 	model.fit(X_train,y_train)
-
-		# 	joblib.dump(baseline_pipeline, "pipeline.pkl")
-		# 	mlflow.log_artifact("pipeline.pkl", artifact_path="preprocessing")
-		# 	signature = mlflow.models.infer_signature(X_train, model.predict(X_train))
-		# 	mlflow.sklearn.log_model(model, name=MODEL_NAME, signature=signature, input_example=X_train[:5])
-
-		# 	y_pred = model.predict(X_test)
-
-		# 	metrics = calculate_metrics(y_test, y_pred)
-		# 	if best_error == 0 or metrics['MSE'] < best_error:
-		# 		best_error = metrics['MSE']
-		# 		best_run_id = run.info.run_id
-		# 		best_model = model.__class__.__name__ 
 		
 		print(f"\nBest model run_id: {run.info.run_id} with MSE: {best_error}")
 		print("Best model name:" + str(best_model))
@@ -247,17 +234,17 @@ def main():
 		registered_model = mlflow.register_model(model_uri, MODEL_NAME)
 		print(f"Registered model version: {registered_model.version}")
 		
-		# Promote to Production (required for Flask app to load it)
+		#promote to Production
 		from mlflow.tracking import MlflowClient
-		# Assign alias (e.g., production)
+		#assign alias
 		client = MlflowClient()
 		client.set_registered_model_alias(
 			name=MODEL_NAME,
-			alias="staging",  # or "staging", "canary", etc.
+			alias="staging", 
 			version=registered_model.version,
 		)
 
-		# Create alias for commit SHA (truncate for readability)
+		#create alias for commit SHA
 		client.set_registered_model_alias(
 			name=MODEL_NAME,
 			alias=COMMIT_SHA,
@@ -270,7 +257,7 @@ def main():
 		print(f"ERROR: Failed to register/promote model: {e}")
 		print(f"Model URI: {model_uri}")
 		print(f"MLflow tracking URI: {os.getenv('MLFLOW_TRACKING_URI')}")
-		raise  # Re-raise to fail the CI pipeline if registration fails
+		raise  #re-raise to fail the CI pipeline if registration fails
  
 
 
