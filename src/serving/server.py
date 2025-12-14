@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import requests
 import pickle
 import sqlite3
 import numpy as np
@@ -89,6 +90,43 @@ if not MODEL_NAME:
 
 MODEL_ALIAS = os.getenv("MODEL_ALIAS", "production")
 
+# --- CONFIGURAÇÃO GITHUB ACTIONS ---
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+REPO_OWNER = os.getenv("REPO_OWNER", "Tomas7025")
+REPO_NAME = os.getenv("REPO_NAME", "proj_LAIA")
+
+# --- FUNÇÃO AUXILIAR ---
+def trigger_gh_action(alert_name):
+    """Dispara o workflow de re-treino no GitHub"""
+    if not GITHUB_TOKEN:
+        print("[ERROR] GITHUB_TOKEN not set. Cannot trigger workflow.", flush=True)
+        return False
+    
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/dispatches"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    data = {
+        "event_type": "retrain_model",
+        "client_payload": {
+            "reason": f"Alertmanager: {alert_name}",
+            "source": "serving-app"
+        }
+    }
+    
+    try:
+        resp = requests.post(url, json=data, headers=headers)
+        if resp.status_code == 204:
+            print(f"[SUCCESS] Workflow triggered for alert: {alert_name}", flush=True)
+            return True
+        else:
+            print(f"[ERROR] Failed to trigger workflow: {resp.status_code} - {resp.text}", flush=True)
+            return False
+    except Exception as e:
+        print(f"[ERROR] Exception triggering workflow: {e}", flush=True)
+        return False
+
 # Try to load model and pipeline once on startup
 try:
     app.config["MODEL"] = mlflow.sklearn.load_model(
@@ -119,6 +157,33 @@ except Exception as e:
 
 
 #Endpoints
+
+@app.route("/webhook/alertmanager", methods=["POST"])
+def alertmanager_webhook():
+    """Recebe alertas do Alertmanager e dispara GH Actions se for crítico"""
+    try:
+        data = request.json
+        alerts = data.get('alerts', [])
+        
+        triggered_count = 0
+        
+        for alert in alerts:
+            status = alert.get('status')
+            labels = alert.get('labels', {})
+            name = labels.get('alertname', 'Unknown')
+            severity = labels.get('severity', 'info')
+            
+            # Lógica de decisão: Só dispara se estiver 'firing'
+            if status == 'firing':
+                if severity=='critical':
+                    print(f"[ALERT RECEIVED] {name} ({severity}) is firing!", flush=True)
+                    if trigger_gh_action(name):
+                        triggered_count += 1
+        
+        return jsonify({"status": "processed", "triggered": triggered_count}), 200
+    except Exception as e:
+        print(f"[ERROR] Webhook failed: {e}", flush=True)
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/labels", methods=["POST"])
 def submit_labels():
