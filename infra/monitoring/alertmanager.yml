@@ -7,8 +7,16 @@ route:
   group_interval: 5m
   repeat_interval: 1h
   receiver: 'discord_webhook'
+  routes:
+    - receiver: 'serving_app_webhook'
+      continue: true
 
 receivers:
 - name: 'discord_webhook'
   discord_configs:
   - webhook_url: 'https://discordapp.com/api/webhooks/1448465509984239696/UOxGyKCiVdBaiSLXW5AAeKzuuVXXxQOKy4jo9hLmRyOBEmnw5MNKPz4BbLocG4B31xTh'
+
+- name: 'serving_app_webhook'
+  webhook_configs:
+  - url: 'http://serving-app:8080/webhook/alertmanager'
+    send_resolved: true

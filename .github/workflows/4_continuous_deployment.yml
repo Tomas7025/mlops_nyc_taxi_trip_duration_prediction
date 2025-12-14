@@ -66,6 +66,7 @@ jobs:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
           MODEL_ALIAS: ${{ github.sha }}
           MLFLOW_MODEL_NAME: ${{ env.MLFLOW_MODEL_NAME }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
           DB_PATH: "/app/data/monitoring.db"
         run: |
           docker run -d --name serving-app -p 9001:8080 \

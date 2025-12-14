@@ -14,6 +14,9 @@ services:
       - MLFLOW_TRACKING_URI=http://10.17.0.162:5000 # IP da VM
       - MLFLOW_MODEL_NAME=modelo_test
       - MODEL_ALIAS=staging
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - REPO_OWNER=Tomas7025
+      - REPO_NAME=proj_LAIA
     networks:
       - monitoring-net
 
