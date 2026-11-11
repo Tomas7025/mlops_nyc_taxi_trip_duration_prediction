@@ -1,298 +1,89 @@
-# 🧭 Guia de Setup — Projeto MLOps NYC Taxi (`proj_LAIA`)
+# End-to-End MLOps Pipeline for Taxi Trip Duration Prediction
 
-Este documento explica **como configurar o ambiente de desenvolvimento e execução** do projeto,  
-desde o acesso às VMs até à sincronização de dados e execução de código com tracking via MLflow.
+Project for the course "Advanced Artificial Intelligence Laboratory" at the University of Coimbra, 2025/26.
 
----
+## Summary
 
-## 🧩 1️⃣ Acesso à infraestrutura
+This work consisted on the implementation of an end-to-end MLOps pipeline to predict taxi trip duration. This included data preprocessing (feature engineering/extraction and preprocessing), model training, model and metric tracking, data versioning, a CI/CD pipeline, performance monitoring and drift detection.
 
-### 🔹 Passo 1 — Conectar à rede interna
-Para aceder às VMs, deves estar **ligado à rede interna do DEI** (ou VPN da Universidade de Coimbra).
+![Project Architecture](images\mlops-architecture.png)
 
-- Se estás no campus: já estás dentro da rede interna.
-- Se estás fora: liga-te à VPN institucional.
+## Goals
 
-> ⚠️ Sem estar na rede interna, **não conseguirás aceder nem ao servidor DVC nem ao MLflow.**
+- Deploy and serve a model that predicts taxi trip duration based on historical data;
+- Implement an automatic MLOps pipeline.
 
----
+## Description
 
-### 🔹 Passo 2 — Acesso SSH à VM de treino
+This project used data from [New York City Taxi dataset](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), specifically data from 2011 and 2012 for training and data from 2013 for testing.
 
-A VM principal (`ml-sv-laia-djtt`) contém:
-- O *remote storage* do DVC (`/opt/dvc_storage`)
-- O *MLflow Tracking Server* (porta `5000`)
-- O ambiente de treino (Python, Docker, etc.)
+### Feature Engineering / Extraction
 
-Para aceder:
-```bash
-ssh admin@<IP_VM>
-```
+The duration of a taxi trip was calculated as `tpep_dropoff_datetime - tpep_pickup_datetime`, with the first column being dropped after calculation. 
+Afterwards, we extracted `pickup_hour`, `pickup_day`, `pickup_day_of_week` and `pickup_month` from the `tpep_pickup_datetime` column. Because nearly every timestamp is unique, the raw value gives the models little to generalise from, whereas these components capture recurring patterns (such as rush hours, weekends and seasonal demand) that we expected the models to learn more easily. 
+Finally, `tpep_pickup_datetime` was dropped alongside other columns not provided by the professors during the testing of the deployed models (these were `RatecodeID`, `store_and_fwd_flag`, `payment_type`, `fare_amount`, `extra`, `mta_tax`, `tip_amount`, `tolls_amount`, `improvement_surcharge`, `total_amount`,`congestion_surcharge` and `airport_fee`).
 
-> 💡 Usa a tua chave pública SSH, que já deve estar configurada pelo administrador do projeto.
+### Preprocessing
 
----
+Due to resource limitations, only 2.5% of the original data was used to train the models. This subsample was done randomly, but ensuring the same number of registries per month, day and hour was kept, as to avoid biasing the data to certain times. 
+Next, the numerical columns were normalized using a StandardScaler, and the numerical column `VendorID` was one hot encoded. The remaining categorical columns were not encoded due to the variability of classes present in them. 
+Finally, we treated training cases where `trip_distance=0` as missing data, and changed this to the mean of this column.
 
-## 🧩 2️⃣ Clonar o repositório e criar ambiente local
+### Model Training
 
-No teu computador:
+Two models were trained on this data: a LinearRegressor and a Histogram-based Gradient Boosting classifier. For the histogram-based classifier a GridSearch was performed among the following parameters:
 
-```bash
-git clone git@github.com:Tomas7025/proj_LAIA.git
-cd proj_LAIA
-```
+| Parameters            | Values    |
+|-----------------------|-----------|
+| learning_rate         | 0.01, 0.1 |
+| l2_regularization     | 0.01, 0.1 |
+| max_leaf_nodes        | 15, 31    |
+| max_iter              | 200, 400  |
 
-Cria e ativa o ambiente Python (recomendado usar **conda** ou **venv**):
+These models are trained on the train data and validated on the validation data. The model with the best score (lowest MSE) in the validation data is given the proper alias in MLFlow.
 
-### 👉 Se usas Conda:
-```bash
-conda create -n env_proj_laia python=3.12 -y
-conda activate env_proj_laia
-pip install -r requirements.txt
-```
+### MLFlow
 
-### 👉 Ou se usas venv:
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+MLFlow is used to track all models, their respective scores, their parameters, and the pipeline used for data preprocessing (which is then used on the deployement). Tags are used to move models between stages.
 
-> ⚠️ Se o `dvc pull` falhar mais à frente com erro de SSH, instala o plugin necessário:
-> ```bash
-> pip install dvc-ssh
-> ```
+### DVC
 
----
+DVC was used for data versioning, hosting the data in on of the VMs.
 
-## 🧩 3️⃣ Configurar o DVC
+### CI/CD pipeline
 
-### 🔹 Passo 1 — Verificar instalação
-```bash
-dvc --version
-```
+The GitHub Actions CI/CD pipeline was divided into four workflows: **Continuous Integration**, **Continuous Delivery**, **Continuous Staging**, and **Continuous Deployment**. This pipeline ran on self-hosted runners, with the first three workflows running on VM-1 (the training VM) and the last running on VM-2 (the deployment VM). This division was made to ensure the training environment was kept separate from the deployment environment.
 
-Se não estiver instalado:
-```bash
-pip install dvc dvc-ssh
-```
+Regarding the workflows, **Continuous Integration** ran on every commit to the master branch. It started by running unit tests, before building and pushing the training and serving Docker images. 
 
----
+**Continuous Delivery** ran only if the previous workflow was successful. It started by getting the training Docker image from the GitHub Container Registry (GHCR), installing DVC and pulling the datasets saved there, and running the training container. Afterwards, the quality of the best model is checked, and if its MSE is above the defined threshold, the workflow fails. Otherwise, we pull the serving Docker image and clean any serving containers if they exist, before running the serving container. This is followed by the end-to-end tests and, if they are successful, the staging image is tagged as serving:staging and is pushed to GHCR. Finally, we promote the model to staging by changing its alias.
 
-### 🔹 Passo 2 — Configurar o *remote storage* (na VM)
+Afterwards, **Continuous Staging** started by getting the serving:staging Docker image from the GHCR and cleaning any serving containers, if any exist. We then run the serving container and run the end-to-end tests again, and if everything is successful, we promote the model to production and change the container tag to serving:production.
 
-Primeiro, verifica se o repositório já tem um remote configurado:
-```bash
-dvc remote list
-```
+Finally, **Continuous Deployment** started by pulling the Docker image now tagged as serving:production from the GHCR, and then stops and deletes the serving container from the previous step and runs the recently pulled one. 
+This container is then available to receive prediction requests, waiting for them on the 9001 port.
 
-Se aparecer algo como:
-```
-local_storage   ssh://admin@<IP_VM>:/opt/dvc_storage   (default)
-```
-Então **atualiza a configuração existente**:
-```bash
-dvc remote modify --local local_storage url ssh://admin@<IP_VM>:/opt/dvc_storage
-```
+### Monitoring
 
-Ou, se tiveres o hostname configurado no `~/.ssh/config`:
-```bash
-dvc remote modify --local local_storage url ssh://my-vm-hostname:/opt/dvc_storage
-```
+The deployed service was monitored using Prometheus, Graphana and an Alertmanager. 
 
-Se **não aparecer nada**, adiciona o remote:
-```bash
-dvc remote add -d local_storage ssh://admin@<IP_VM>:/opt/dvc_storage
-```
+**Instrumentation**
+The Flask API serves predictions on port `9001` and exposes metrics on port `8080` (`/metrics`) using `prometheus_client`:
+- **Counters:** `http_requests_total` (labelled by status code, used for the error rate) and `model_predictions_total` (labelled by vendor)
+- **Histograms:** API latency, input trip distance, and predicted trip duration (custom 0–120 min buckets for accurate quantiles such as P95)
+- **Gauges:** `model_last_prediction`, the most recent model output
 
-> 💡 O sufixo `--local` guarda a configuração apenas na tua máquina local (não é commitado no Git).
+**Collection & visualisation**
+- Prometheus scrapes the API every 5 seconds. 
+- Grafana dashboards and data sources are provisioned automatically from YAML/JSON files, so the setup is reproducible and version-controlled.
 
----
+**Alerting**
+- Prometheus alert rules cover availability (error rate > 10%) and data drift.
+- Alertmanager sent alerts to the team's Discord channel. Drift alerts also triggered the Continuous Training pipeline in GitHub Actions, as will be explained next.
 
-### 🔹 Passo 3 — Sincronizar os dados
+### Drift Detection
 
-Agora, puxa os dados do servidor DVC:
-```bash
-dvc pull -v -j 4
-```
+To check for data drift, EvidentlyAI was used to compare the training data with the data provided to the deployed model. To detect drift, the package uses Wasserstein (for numerical columns) and Jensen–Shannon (for categorical columns) statistical tests. If any drift was detected, we trigger the GitHub training pipeline to retrain the model and change the serving image.
 
-Este comando:
-- Conecta-se à VM via SSH
-- Faz download dos datasets necessários
-- Cria a estrutura `data/raw/` localmente
+To check for concept drift, we logged MSE into a Gauge object in Prometheus and logged a Counter that is increased when MSE goes over a certain threshold. If the MSE went over the threshold 5 or more times in 5 hours, we once again triggered the GitHub training pipeline to retrain the model and change the serving image.
 
-Verifica:
-```bash
-ls -lh data/raw
-```
-
-Deves ver ficheiros como:
-```
-yellow_tripdata_2010-01.parquet
-yellow_tripdata_2010-02.parquet
-yellow_tripdata_2010-03.parquet
-```
-
----
-
-## 🧩 4️⃣ Acesso ao MLflow Tracking Server
-
-O MLflow está configurado **para uso interno na VM** — ou seja, apenas pode ser acedido:
-- diretamente dentro da VM (localhost)
-- ou via túnel SSH se estiveres remoto na VPN
-
----
-
-### 🔹 Aceder dentro da VM
-
-Na VM (`admin@ml-sv-laia-djtt`), o MLflow já está a correr via Docker Compose:
-```bash
-cd ~/proj_LAIA/infra/mlflow_docker
-docker compose ps
-```
-
-Se não estiver a correr:
-```bash
-docker compose up -d
-```
-
-Verifica se responde:
-```bash
-curl -v http://127.0.0.1:5000
-```
-
-Abre o servidor MLflow com o ip da **VM** no teu browser (assumindo que estás na mesma rede interna que a VM):
-```
-http://<IP_VM>:5000
-```
-
----
-
-### 🔹 Aceder remotamente (via túnel SSH)
-
-Se estás **fora da VM** mas ligado à VPN:
-```bash
-ssh -L 5000:localhost:5000 admin@<IP_VM>
-```
-
-Depois, no teu browser local:
-```
-http://127.0.0.1:5000
-```
-
-> Isto cria um *túnel SSH* que redireciona a porta `5000` da VM para a tua máquina local.
-
----
-
-### 🔹 Utilizar o MLflow nos teus scripts
-
-Adiciona no início do teu código (ex: `src/train.py`):
-```python
-import mlflow
-
-# Se estiveres dentro da VM:
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
-
-# Ou se estiveres a usar túnel SSH (fora da VM, mas na VPN):
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
-
-mlflow.set_experiment("nyc_taxi_project")
-```
-
-Cada execução de treino registará:
-- parâmetros do modelo
-- métricas
-- artefactos (ficheiros, checkpoints, etc.)
-
-Se não quiseres que certas execuções apareçam no MLflow (por exemplo, testes locais),  
-podes condicionar o tracking:
-```python
-import os
-import mlflow
-
-if os.getenv("USE_MLFLOW", "true").lower() == "true":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.start_run()
-```
-E desativar com:
-```bash
-export USE_MLFLOW=false
-```
-
----
-
-## 🧩 5️⃣ Estrutura do projeto
-
-```
-proj_LAIA/
-├── data/                     # Dados versionados (via DVC)
-│   ├── raw/
-│   └── .gitkeep
-├── infra/
-│   ├── server_ml_laia.yaml   # Cloud-init: setup automático da VM
-│   ├── setup_oh_my_zsh.sh    # Configuração shell (Zsh, plugins)
-│   ├── vm_simple.sh          # Criação de VM
-│   └── mlflow_docker/        # MLflow Tracking Server (Docker)
-│       ├── docker-compose.yml
-│       └── mlflow.db
-├── notebooks/                # Análise exploratória
-├── src/                      # Código fonte
-│   ├── train.py
-│   └── utils/
-│       └── preprocessing.py
-├── requirements.txt          # Dependências
-└── dvc.yaml                  # (futuramente) pipeline de treino
-```
-
----
-
-## 🧩 6️⃣ Como correr experimentos (exemplo rápido)
-
-Na VM (onde o MLflow está ativo):
-```bash
-python src/train.py
-```
-
-Isso irá:
-- Usar os dados de `data/raw/`
-- Treinar o modelo
-- Registar os resultados no MLflow
-
-Depois, abre no browser da VM ou via túnel:
-```
-http://127.0.0.1:5000
-```
-para ver os resultados.
-
----
-
-## 🧩 7️⃣ Dicas e boas práticas
-
-✅ **Nunca commits ficheiros grandes** — usa o DVC para dados  
-✅ **Não mexer em `/opt/dvc_storage` diretamente**  
-✅ **Antes de treinar um modelo:** faz `git pull` e `dvc pull`  
-✅ **Usa branches** para alterações grandes  
-✅ **Guarda tokens e chaves em variáveis de ambiente ou GitHub Secrets**
-
----
-
-## 🧩 8️⃣ Problemas comuns
-
-| Problema | Solução |
-|-----------|----------|
-| `dvc pull` dá erro de cache | Instala `dvc-ssh` e verifica a VPN |
-| MLflow não abre | Confirma que o container está ativo (`docker compose ps`) |
-| Docker erro “permission denied” | Tenta `sudo docker compose up -d` |
-| `.dvc` não trackeia | Garante que `.gitignore` tem `!data/**/*.dvc` |
-| `Remote already exists` | Usa `dvc remote modify --local local_storage url ...` |
-
----
-
-## 🧠 9️⃣ Recursos úteis
-
-- 📘 [Documentação DVC](https://dvc.org/doc/start)
-- 📗 [Documentação MLflow](https://mlflow.org/docs/latest/index.html)
-- 🐋 [Docker Compose](https://docs.docker.com/compose/)
-- 💡 [Git SSH Keys Setup](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
-
----
