@@ -6,7 +6,7 @@ Project for the course "Advanced Artificial Intelligence Laboratory" at the Univ
 
 This work consisted on the implementation of an end-to-end MLOps pipeline to predict taxi trip duration. This included data preprocessing (feature engineering/extraction and preprocessing), model training, model and metric tracking, data versioning, a CI/CD pipeline, performance monitoring and drift detection.
 
-![Project Architecture](images\mlops-architecture.png)
+![Project Architecture](images/mlops-architecture.png)
 
 ## Goals
 
